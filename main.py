@@ -42,15 +42,15 @@ def run_yade(dict_user, dict_sample):
     Prepare and run yade simulation.
     '''
     # from pf to dem
-    compute_plane(dict_user, dict_sample) # from pf_to_dem.py
+    compute_vertices(dict_user, dict_sample) # from pf_to_dem.py
+
     # transmit data
     dict_save = {
-    'Kn': dict_user['Kn'],
-    'Ks': dict_user['Ks'],
+    'E': dict_user['E'],
+    'Poisson': dict_user['Poisson'],
     'force_applied': dict_user['force_applied'],
     'pos_1': dict_sample['pos_1'],
     'pos_2': dict_sample['pos_2'],
-    'r_pot': dict_user['r_pot'],
     'n_ite_max': dict_user['n_ite_max'],
     'steady_state_detection': dict_user['steady_state_detection'],
     'n_steady_state_detection': dict_user['n_steady_state_detection'],
@@ -64,7 +64,7 @@ def run_yade(dict_user, dict_sample):
     os.system('yadedaily -j '+str(dict_user['n_proc'])+' -x -n dem_base.py')
 
     # sort files
-    sort_files_yade() # in dem.py
+    sort_files_yade() # in dem_to_pf.py
 
     # load data
     with open('data/dem_to_main.data', 'rb') as handle:
@@ -132,12 +132,18 @@ while dict_sample['i_DEMPF_ite'] < dict_user['n_DEMPF_ite']:
     dict_user['L_sum_eta_1'].append(np.sum(dict_sample['eta_1_map']))
     dict_user['L_sum_eta_2'].append(np.sum(dict_sample['eta_2_map']))
     dict_user['L_sum_c'].append(np.sum(dict_sample['c_map']))
+    dict_user['L_sum_mass'].append(np.sum(dict_sample['eta_1_map'])+np.sum(dict_sample['eta_2_map'])+np.sum(dict_sample['c_map']))
 
     # plot eta_i, c
-    fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(16,9))
+    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2,figsize=(16,9))
     ax1.plot(dict_user['L_sum_eta_1'])
+    ax1.set_title(r'$\Sigma\eta_1$')
     ax2.plot(dict_user['L_sum_eta_2'])
+    ax2.set_title(r'$\Sigma\eta_2$')
     ax3.plot(dict_user['L_sum_c'])
+    ax3.set_title(r'$\Sigma C$')
+    ax4.plot(dict_user['L_sum_mass'])
+    ax4.set_title(r'$\Sigma\eta_1 + \Sigma\eta_2 + \Sigma c$')
     fig.savefig('plot/etai_c.png')
     plt.close(fig)
 

@@ -6,7 +6,43 @@ def create_materials():
     '''
     Create materials.
     '''
-    O.materials.append(FrictMat(young=-1, poisson=-1, frictionAngle=atan(0.5), density=2000, label='frictMat'))
+    O.materials.append(PolyhedraMat(young=E, poisson=Poisson, frictionAngle=atan(0.5), density=2000, label='frictMat'))
+
+# -----------------------------------------------------------------------------#
+
+def create_polyhedral():
+    '''
+    Recreate polydra from data extrapolated with phase field output.
+    '''
+    print("Creating polyhedra")
+
+    # g1, bottom grain, fixed
+    O.bodies.append(
+        polyhedra_utils.polyhedra(
+            O.materials[-1],
+            v = L_vertices_1,
+            fixed = True,
+            color = [0,0,1]
+        )
+    )
+    O.bodies[-1].state.refPos = O.bodies[-1].state.pos
+
+    # g2, top grain
+    O.bodies.append(
+        polyhedra_utils.polyhedra(
+            O.materials[-1],
+            v = L_vertices_2,
+            fixed = True,
+            color = [1,0,0]
+        )
+    )
+    O.bodies[-1].state.blockedDOFs = 'xzXYZ'
+    O.bodies[-1].state.refPos = O.bodies[-1].state.pos
+
+    # initial export
+    vtkExporter.exportPolyhedra(what=dict(color='b.shape.color'))
+    vtkExporter_1.exportPolyhedra(ids=[0])
+    vtkExporter_2.exportPolyhedra(ids=[1])
 
 # -----------------------------------------------------------------------------#
 
@@ -113,8 +149,8 @@ def add_data():
     '''
     if O.interactions.has(0,1) : # check if interaction exists
         if O.interactions[0,1].isReal: # check if interaction is real
-            overlap = O.interactions[0,1].geom.penetrationDepth
-            volume = O.interactions[0,1].phys.contactArea*overlap
+            overlap = O.interactions[0,1].geom.equivalentPenetrationDepth
+            volume = O.interactions[0,1].geom.penetrationVolume
             normal_force = O.interactions[0,1].phys.normalForce[1]
         else :
             overlap = 0
@@ -140,9 +176,9 @@ def check():
     if O.iter > n_ite_max or \
        ((max(window)-min(window))<steady_state_detection*force_applied and
         max(window)>force_applied and min(window)<force_applied):
-        vtkExporter.exportPotentialBlocks(what=dict(color='b.shape.color')) # final export
-        vtkExporter_1.exportPotentialBlocks(ids=[0])
-        vtkExporter_2.exportPotentialBlocks(ids=[1])
+        vtkExporter.exportPolyhedra(what=dict(color='b.shape.color')) # final export
+        vtkExporter_1.exportPolyhedra(ids=[0])
+        vtkExporter_2.exportPolyhedra(ids=[1])
         plot.plot(noShow=True).savefig('plot/contact/contact_'+str(i_DEMPF_ite)+'.png')
         O.pause() # stop DEM simulation
 
@@ -152,7 +188,7 @@ def compute_dt():
     '''
     Compute the time step used in the DEM step.
     '''
-    O.dt = 0.1 * sqrt(min(O.bodies[0].state.mass, O.bodies[1].state.mass) / Kn)
+    O.dt = 0.1 * polyhedra_utils.PWaveTimeStep()
 
 # -----------------------------------------------------------------------------#
 
@@ -162,14 +198,14 @@ def create_engines():
     '''
     O.engines = [
             ForceResetter(),
-            InsertionSortCollider([PotentialBlock2AABB()], verletDist=0.00),
+            InsertionSortCollider([Bo1_Polyhedra_Aabb()], verletDist=0.00),
             InteractionLoop(
-                    [Ig2_PB_PB_ScGeom(calContactArea=True)],
-                    [Ip2_FrictMat_FrictMat_KnKsPBPhys(kn_i=Kn, ks_i=Ks, Knormal=Kn, Kshear=Ks, viscousDamping=0.2)],
-                    [Law2_SCG_KnKsPBPhys_KnKsPBLaw(label='law', initialOverlapDistance = 1e-6, allowViscousAttraction=False)]
+                    [Ig2_Polyhedra_Polyhedra_PolyhedraGeom()],
+                    [Ip2_PolyhedraMat_PolyhedraMat_PolyhedraPhys()],
+                    [Law2_PolyhedraGeom_PolyhedraPhys_Volumetric()]
             ),
     		PyRunner(command='applied_force()',iterPeriod=1),
-            NewtonIntegrator(damping=0.0, exactAsphericalRot=True, gravity=[0, 0, 0], label='newton'),
+            NewtonIntegrator(damping=0.5, exactAsphericalRot=True, gravity=[0, 0, 0], label='newton'),
     		PyRunner(command='add_data()',iterPeriod=1),
             PyRunner(command='check()',iterPeriod=1, label='checker')
     ]

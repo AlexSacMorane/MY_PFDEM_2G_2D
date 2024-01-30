@@ -2,6 +2,7 @@
 
 import pickle, math, os, shutil
 from pathlib import Path
+from scipy.ndimage import binary_dilation
 import numpy as np
 
 # -----------------------------------------------------------------------------#
@@ -18,7 +19,7 @@ def move_phasefield(dict_user, dict_sample):
     displacement_g2 = dict_save['displacement_g2']
 
     # tracker
-    dict_user['L_displacement'].append(displacement_g2[2])
+    dict_user['L_displacement'].append(displacement_g2[1])
 
     # loading old variables
     eta_1_map = dict_sample['eta_1_map']
@@ -89,8 +90,9 @@ def compute_ed(dict_user, dict_sample):
     R_gas = 82.06e5 # cm3 Pa K-1 mol-1
     Temp = 25+278   # K
     V_m = 27.1      # cm3 mol-1
-    conv = 1        #  = 1/C_ref, normalize the sink/source
-    v_mesh = (dict_sample['x_L'][1]-dict_sample['x_L'][0])*(dict_sample['y_L'][1]-dict_sample['y_L'][0]) # surface of a mesh, m2
+    conv = 1        # = 1/C_ref, normalize the sink/source
+    s_mesh = 1*(dict_sample['x_L'][1]-dict_sample['x_L'][0]) # surface of a mesh, m2
+    v_mesh = 1*(dict_sample['x_L'][1]-dict_sample['x_L'][0])*(dict_sample['y_L'][1]-dict_sample['y_L'][0]) # volume of a mesh, m3
 
     # iterate on mesh
     for i_x in range(len(dict_sample['x_L'])):
@@ -100,14 +102,15 @@ def compute_ed(dict_user, dict_sample):
                 P =  np.linalg.norm(normalForce)/contact_area # Pa
             else : # not in the contact
                 P = 0 # Pa
-            r = contact_area*math.exp(P*V_m/(R_gas*Temp))*(1-dict_sample['c_map'][i_y, i_x]/(dict_user['C_eq']*math.exp(P*V_m/(R_gas*Temp))))
+            r = s_mesh*math.exp(P*V_m/(R_gas*Temp))*(1-dict_sample['c_map'][i_y, i_x]/(dict_user['C_eq']*math.exp(P*V_m/(R_gas*Temp))))
             if r >= 0 :
                 r = dict_user['k_diss']*r # dissolution rate
             else :
                 r = dict_user['k_prec']*r # precipitation rate
             # the rate is in mol s-1
             r = r/v_mesh # convert in mol m-3 s-1
-            r = r*conv # convert in C_ref s-1
+            r = r*conv # convert in C_ref m-3 s-1
+            r = r*2/3 # convert in C_ref m-3
             # save in the map
             dict_sample['ed_map'][i_y, i_x] = r
 
@@ -326,16 +329,26 @@ def compute_kc(dict_user, dict_sample):
     This .txt file represent the phase field maps.
     '''
     # compute
-    kc_map = np.array(np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x'])))
+    kc_map = np.array(np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x'])), dtype = bool)
     # iterate on x and y
     for i_y in range(len(dict_sample['y_L'])):
         for i_x in range(len(dict_sample['x_L'])):
             if dict_sample['eta_1_map'][i_y, i_x] < 0.5 and dict_sample['eta_2_map'][i_y, i_x] < 0.5: # out of the grain
-                kc_map[i_y, i_x] = dict_user['D_solute']
+                kc_map[i_y, i_x] = True
             elif dict_sample['eta_1_map'][i_y, i_x] > 0.5 and dict_sample['eta_2_map'][i_y, i_x] > 0.5: # in the contact
-                kc_map[i_y, i_x] = dict_user['D_solute']
+                kc_map[i_y, i_x] = True
             else :
-                kc_map[i_y, i_x] = 0
+                kc_map[i_y, i_x] = False
+
+    # dilation
+    dilated_M = binary_dilation(kc_map, dict_user['struct_element'])
+
+    #compute the map of the solute diffusion coefficient
+    kc_map = np.array(np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x'])))
+    for i_y in range(len(dict_sample['y_L'])):
+        for i_x in range(len(dict_sample['x_L'])):
+            if dilated_M[i_y, i_x]:
+                kc_map[i_y, i_x] = dict_user['D_solute']
 
     # write
     file_to_write_1 = open('data/kc.txt','w')
@@ -391,7 +404,7 @@ def write_i(dict_user, dict_sample):
     elif j == 9:
       line = line[:-1] + ' ' + str(max(dict_sample['y_L']))+'\n'
     elif j == 116:
-      line = line[:-1] + "'"+str(dict_user['Mobility'])+' '+str(dict_user['kappa_eta'])+" 1'\n"
+      line = line[:-1] + "'"+str(dict_user['Mobility_eff'])+' '+str(dict_user['kappa_eta'])+" 1'\n"
     elif j == 138:
       line = line[:-1] + ' ' + str(dict_user['Energy_barrier'])+"'\n"
     elif j == 217:
@@ -415,9 +428,9 @@ def sort_files_yade():
       j = j + 1
       filepath = Path('vtk/2grains_'+str(j)+'.vtk')
   # rename
-  os.rename('vtk/2grains-PotentialBlocks-00000000.vtk','vtk/2grains_'+str(j)+'.vtk')
-  os.rename('vtk/grain_1-PotentialBlocks-00000000.vtk','vtk/grain1_'+str(j)+'.vtk')
-  os.rename('vtk/grain_2-PotentialBlocks-00000000.vtk','vtk/grain2_'+str(j)+'.vtk')
-  os.rename('vtk/2grains-PotentialBlocks-00000001.vtk','vtk/2grains_'+str(j+1)+'.vtk')
-  os.rename('vtk/grain_1-PotentialBlocks-00000001.vtk','vtk/grain1_'+str(j+1)+'.vtk')
-  os.rename('vtk/grain_2-PotentialBlocks-00000001.vtk','vtk/grain2_'+str(j+1)+'.vtk')
+  os.rename('vtk/2grains-polyhedra-00000000.vtk','vtk/2grains_'+str(j)+'.vtk')
+  os.rename('vtk/grain_1-polyhedra-00000000.vtk','vtk/grain1_'+str(j)+'.vtk')
+  os.rename('vtk/grain_2-polyhedra-00000000.vtk','vtk/grain2_'+str(j)+'.vtk')
+  os.rename('vtk/2grains-polyhedra-00000001.vtk','vtk/2grains_'+str(j+1)+'.vtk')
+  os.rename('vtk/grain_1-polyhedra-00000001.vtk','vtk/grain1_'+str(j+1)+'.vtk')
+  os.rename('vtk/grain_2-polyhedra-00000001.vtk','vtk/grain2_'+str(j+1)+'.vtk')

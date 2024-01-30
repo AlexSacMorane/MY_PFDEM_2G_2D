@@ -269,6 +269,99 @@ def read_vtk_own(j_str):
 
 # -----------------------------------------------------------------------------#
 
+def compute_vertices(dict_user, dict_sample):
+    '''
+    From a phase map, compute vertices coordinates for polyhedral.
+    '''
+    # compute vertices
+    L_vertices_1 = interpolate_vertices(dict_sample['eta_1_map'], dict_sample['pos_1'], dict_user, dict_sample)
+    L_vertices_2 = interpolate_vertices(dict_sample['eta_2_map'], dict_sample['pos_2'], dict_user, dict_sample)
+
+    # save data
+    dict_save = {
+    'L_vertices_1': L_vertices_1,
+    'L_vertices_2': L_vertices_2
+    }
+    with open('data/planes.data', 'wb') as handle:
+        pickle.dump(dict_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+# -----------------------------------------------------------------------------#
+
+def interpolate_vertices(eta_i_map, center, dict_user, dict_sample):
+    '''
+    Interpolate vertices for polyhedral.
+    '''
+    map_phi = []
+    L_phi = []
+    for i_phi in range(dict_user['n_phi']):
+        phi = 2*math.pi*i_phi/dict_user['n_phi']
+        L_phi.append(phi)
+        map_phi.append([])
+    L_phi.append(2*math.pi)
+    for i_x in range(len(dict_sample['x_L'])-1):
+        for i_y in range(len(dict_sample['y_L'])-1):
+            L_in = [] # list the nodes inside the grain
+            if eta_i_map[-1-i_y    , i_x] > 0.5 :
+                L_in.append(0)
+            if eta_i_map[-1-(i_y+1), i_x] > 0.5 :
+                L_in.append(1)
+            if eta_i_map[-1-(i_y+1), i_x+1] > 0.5 :
+                L_in.append(2)
+            if eta_i_map[-1-i_y    , i_x+1] > 0.5 :
+                L_in.append(3)
+            if L_in != [] and L_in != [0,1,2,3]:
+                center_mesh = (np.array([dict_sample['x_L'][i_x], dict_sample['y_L'][i_y]])+np.array([dict_sample['x_L'][i_x+1], dict_sample['y_L'][i_y+1]]))/2
+                u = (center_mesh-np.array(center))/np.linalg.norm(center_mesh-np.array(center))
+                # compute phi
+                if u[1]>=0:
+                    phi = math.acos(u[0])
+                else :
+                    phi = 2*math.pi-math.acos(u[0])
+                # iterate on the lines of the mesh to find the plane intersection
+                L_p = []
+                if (0 in L_in and 1 not in L_in) or (0 not in L_in and 1 in L_in):# line 01
+                    x_p = dict_sample['x_L'][i_x]
+                    y_p = (0.5-eta_i_map[-1-i_y, i_x])/(eta_i_map[-1-(i_y+1), i_x]-eta_i_map[-1-i_y, i_x])*(dict_sample['y_L'][i_y+1]-dict_sample['y_L'][i_y])+dict_sample['y_L'][i_y]
+                    L_p.append(np.array([x_p, y_p]))
+                if (1 in L_in and 2 not in L_in) or (1 not in L_in and 2 in L_in):# line 12
+                    x_p = (0.5-eta_i_map[-1-(i_y+1), i_x])/(eta_i_map[-1-(i_y+1), i_x+1]-eta_i_map[-1-(i_y+1), i_x])*(dict_sample['x_L'][i_x+1]-dict_sample['x_L'][i_x])+dict_sample['x_L'][i_x]
+                    y_p = dict_sample['y_L'][i_y+1]
+                    L_p.append(np.array([x_p, y_p]))
+                if (2 in L_in and 3 not in L_in) or (2 not in L_in and 3 in L_in):# line 23
+                    x_p = dict_sample['x_L'][i_x+1]
+                    y_p = (0.5-eta_i_map[-1-i_y, i_x+1])/(eta_i_map[-1-(i_y+1), i_x+1]-eta_i_map[-1-i_y, i_x+1])*(dict_sample['y_L'][i_y+1]-dict_sample['y_L'][i_y])+dict_sample['y_L'][i_y]
+                    L_p.append(np.array([x_p, y_p]))
+                if (3 in L_in and 0 not in L_in) or (3 not in L_in and 0 in L_in):# line 30
+                    x_p = (0.5-eta_i_map[-1-i_y, i_x])/(eta_i_map[-1-i_y, i_x+1]-eta_i_map[-1-i_y, i_x])*(dict_sample['x_L'][i_x+1]-dict_sample['x_L'][i_x])+dict_sample['x_L'][i_x]
+                    y_p = dict_sample['y_L'][i_y]
+                    L_p.append(np.array([x_p, y_p]))
+                # compute the mean point
+                p_mean = np.array([0,0])
+                for p in L_p :
+                    p_mean = p_mean + p
+                p_mean = p_mean/len(L_p)
+                # look phi in L_phi
+                i_phi = 0
+                while not (L_phi[i_phi] <= phi and phi < L_phi[i_phi+1]) :
+                    i_phi = i_phi + 1
+                # save p_mean in the map
+                map_phi[i_phi].append(p_mean)
+
+    L_vertices = ()
+    # interpolate plane (Least squares method)
+    for i_phi in range(len(map_phi)):
+        # mean vertices
+        mean_v = np.array([0, 0])
+        for v_i in map_phi[i_phi]:
+            mean_v = mean_v + v_i/len(map_phi[i_phi])
+        # save
+        L_vertices = L_vertices + ((mean_v[0], mean_v[1], 0,),)
+        L_vertices = L_vertices + ((mean_v[0], mean_v[1], 1),)
+
+    return L_vertices
+
+# -----------------------------------------------------------------------------#
+
 def compute_plane(dict_user, dict_sample):
     '''
     From a phase map, compute planes for the potential block
