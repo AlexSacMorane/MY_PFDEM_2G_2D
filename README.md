@@ -30,7 +30,7 @@ The goal of the phase-field step is to compute the shape of the grains as it evo
 An Allen-Cahn formulation is used coupled with a solute generation and diffusion. Hence, the conservation of the mass should be verified as precipitation/dissolution occurs.
 
 ### DEM
-The goal of the DEM step is to compute a steady-state configuration. Grains are assumed as potential blocks. The shape is computed from an interpolation of the phase variable.
+The goal of the DEM step is to compute a steady-state configuration. Grains are assumed as polygons. The shape is computed from an interpolation of the phase variable.
 
 ## What is next ?
 Some next releases are presented here.
