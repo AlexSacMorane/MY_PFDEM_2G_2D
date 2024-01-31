@@ -126,6 +126,17 @@ def compute_ed(dict_user, dict_sample):
             # save in the map
             dict_sample['ed_map'][i_y, i_x] = r
 
+    # tracker
+    dict_user['L_m_ed'].append(np.mean(dict_sample['ed_map']))
+
+    # plot
+    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+    # overlap
+    ax1.plot(dict_user['L_m_ed'])
+    ax1.set_title('Mean tilting factor (-)',fontsize=20)
+    fig.savefig('plot/m_ed.png')
+    plt.close(fig)
+
     # write ed
     write_ed_txt(dict_user, dict_sample)
 

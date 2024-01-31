@@ -71,8 +71,8 @@ def get_parameters():
     Mobility = 3/2.2*w
     Mobility_eff = 2.2/3*Mobility/w
     # the time stepping and duration of one PF simualtion
-    dt_PF = 0.001 # time step
-    n_t_PF = 1 # number of iterations
+    dt_PF = 0.0005 # time step
+    n_t_PF = 5 # number of iterations
     # n_t_PF*dt_PF gives the total time duration
 
     # kinetics of dissolution and precipitation
@@ -115,6 +115,7 @@ def get_parameters():
     L_n_v_2 = []
     L_n_v_1_target = []
     L_n_v_2_target = []
+    L_m_ed = []
 
     #---------------------------------------------------------------------#
     # dictionnary
@@ -174,7 +175,8 @@ def get_parameters():
     'L_n_v_1': L_n_v_1,
     'L_n_v_2': L_n_v_2,
     'L_n_v_1_target': L_n_v_1_target,
-    'L_n_v_2_target': L_n_v_2_target
+    'L_n_v_2_target': L_n_v_2_target,
+    'L_m_ed': L_m_ed
     }
 
     return dict_user
