@@ -4,6 +4,7 @@ import pickle, math, os, shutil
 from pathlib import Path
 from scipy.ndimage import binary_dilation
 import numpy as np
+import matplotlib.pyplot as plt
 
 # -----------------------------------------------------------------------------#
 
@@ -81,8 +82,19 @@ def compute_ed(dict_user, dict_sample):
     # load data from dem
     with open('data/dem_to_main.data', 'rb') as handle:
         dict_save = pickle.load(handle)
-    contact_area = dict_save['contact_area']
+    contact_area = dict_save['equivalent_area']
     normalForce = dict_save['normalForce']
+
+    # tracker
+    dict_user['L_P_applied'].append(np.linalg.norm(normalForce)/contact_area)
+
+    # plot
+    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+    # overlap
+    ax1.plot(dict_user['L_P_applied'])
+    ax1.set_title('Pressure at the contact (Pa)',fontsize=20)
+    fig.savefig('plot/contact_pressure.png')
+    plt.close(fig)
 
     # init
     dict_sample['ed_map'] = np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x']))
@@ -116,105 +128,6 @@ def compute_ed(dict_user, dict_sample):
 
     # write ed
     write_ed_txt(dict_user, dict_sample)
-
-# -----------------------------------------------------------------------------#
-
-def compute_ep_old():
-    '''
-    Compute mechanical term.
-    '''
-    ep_map = np.zeros((n_mesh, n_mesh, n_mesh))
-
-    r_map = np.zeros((n_mesh, n_mesh, n_mesh))
-
-    contact_area = O.interactions[0,1].phys.contactArea
-    Ah = 0.5114 # T = 25°C
-    Bh = 0.3288 # T = 25°C
-    R_const = 82.057 # pas constant in cm3 atm K-1 mol-1
-    Temp_C = 25 # °C
-    Temp_K = Temp_C+273 # K
-    # Solubility at 1 bar
-    K_1T = 6.13 # mol kg water
-    # Halite
-    V_Halite = 27.1 *10**-6 # m3 mol-1
-    # Cl
-    a_o_Cl = 3.63 * 10**-10 # m
-    bi_Cl = 0.017 # -
-    z_Cl = -1 # -
-    a_1_Cl =  44.65    # cal bar-1 mol-1
-    a_2_Cl =  4.801e-2 # cal mol-1
-    a_3_Cl =  4.325    # cal K-1 bar-1 mol-1
-    a_4_Cl = -2.847e-4 # cal-1 K-1 mol-1
-    w_Cl = 1.748e-5    # cal-1 mol-1
-    b_1_Cl = -0.331 # -
-    b_2_Cl =  20.16 # -
-    b_3_Cl =  0     # -
-    b_4_Cl =  1     # -
-    # Na
-    a_o_Na = 4.08 * 10**-10 # m
-    bi_Na = 0.082 # -
-    z_Na =  1 # -
-    a_1_Na =  22.8     # cal bar-1 mol-1
-    a_2_Na = -4.38e-2  # cal mol-1
-    a_3_Na = -4.10     # cal K-1 bar-1 mol-1
-    a_4_Na = -0.586e-4 # cal-1 K-1 mol-1
-    w_Na = 0.09e-5     # cal-1 mol-1
-    b_1_Na = 0.3       # -
-    b_2_Na = 52        # -
-    b_3_Na = -3.33e-3  # -
-    b_4_Na = 0.566     # -
-    # dielectric constant
-    U_1 =  3.4279e2  # -
-    U_2 = -5.0866e-3 # °C-1
-    U_3 =  9.4690e-7 # °C-2
-    U_4 = -2.0525    # -
-    U_5 =  3.159e3   # °C
-    U_6 = -1.8289e2  # °C
-    U_7 = -8.0325e3  # bar
-    U_8 =  4.2142e6  # bar °C
-    U_9 =  2.1417    # bar / °C
-    alpha    = (U_7 + U_8/Temp_C + U_9*Temp_C) # bar
-    beta     = U_4 + U_5/(U_6+Temp_C)
-    eps_1000 = U_1*math.exp(U_2*Temp_C+U_3*Temp_C**2)
-    # compressibility of pure water
-    kappa_0 = 4.52e-5 # bar-1
-    # Debye-Hückel
-    A_gamma = 0.51 #mol kg-1 water a t 25°C
-    B_gamma = 1 # Debye-Hückel lenght parameter (1/A_o)
-
-    for i_x in range(n_mesh):
-        for i_y in range(n_mesh):
-            for i_z in range(n_mesh):
-                # determine pressure
-                if eta_1_map[i_x, i_y, i_z] > 0.5 and eta_2_map[i_x, i_y, i_z] > 0.5: # in the contact
-                    P =  O.interactions[0,1].phys.normalForce/contact_area*1e-5 # bar
-                else : # not in the contact
-                    P = 1 # bar
-                # ionic strenght
-                I = 0.5*c_map[i_x,i_y,i_z]*z_Cl**2+0.5*c_map[i_x,i_y,i_z]*z_Na**2 # c must be in mol/l
-                # activity coefficient
-                gamma_Na = 10**(-Ah*z_Na**2*I**0.5/(1+a_o_Na*Bh*I**0.5)+bi_Na*I)
-                gamma_Cl = 10**(-Ah*z_Cl**2*I**0.5/(1+a_o_Cl*Bh*I**0.5)+bi_Cl*I)
-                # ion activity product
-                Q = gamma_Cl*gamma_Na*c_map[i_x,i_y,i_z]**2 # diffusion c_Na and c_Cl are the same
-                # derivatives of dielectric constant
-                d_eps_inv = beta/((alpha+P)*(beta*math.log((alpha+P)/(alpha+1e3))+eps_1000)**2)
-                d_ln_eps  = beta/((alpha+P)*(beta*math.log((alpha+P)/(alpha+1e3))+eps_1000))
-                # Debye-Hückel limiting slope
-                Av = 1.534*A_gamma*R_const*Temp_K*(3*d_ln_eps-kappa_0)
-                # molar volume
-                Vm_Na_0 = 41.84*(0.1*a_1_Na+100*a_2_Na/(2600+P)+a_3_Na/(Temp_K-228)+10**4*a_4_Na/((2600+P)*(Temp_K-228))-w_Na*d_eps_inv)
-                Vm_Na = Vm_Na_0 + 0.5*Av*z_Na**2*I**0.5/(1+a_o_Na*B_gamma*I**0.5) + (b_1_Na + b_2_Na/(Temp_K-228) + b_3_Na*(Temp_K-228))*I**b_4_Na
-                Vm_Cl_0 = 41.84*(0.1*a_1_Cl+100*a_2_Cl/(2600+P)+a_3_Cl/(Temp_K-228)+10**4*a_4_Cl/((2600+P)*(Temp_K-228))-w_Cl*d_eps_inv)
-                Vm_Cl = Vm_Cl_0 + 0.5*Av*z_Cl**2*I**0.5/(1+a_o_Cl*B_gamma*I**0.5) + (b_1_Cl + b_2_Cl/(Temp_K-228) + b_3_Cl*(Temp_K-228))*I**b_4_Cl
-                # volume change of reaction
-                Delta_Vr = Vm_Na + Vm_Cl - V_Halite
-                # solubility
-                Keq = K_1T*10**(-Delta_Vr*(P-1)/R_const*Temp_K)
-                # sink/source term
-                r_map[i_x, i_y, i_z] = - contact_area*k_diss*(1-Q/Keq)
-
-    write_ep_txt(ep_map)
 
 #-------------------------------------------------------------------------------
 
@@ -434,3 +347,44 @@ def sort_files_yade():
   os.rename('vtk/2grains-polyhedra-00000001.vtk','vtk/2grains_'+str(j+1)+'.vtk')
   os.rename('vtk/grain_1-polyhedra-00000001.vtk','vtk/grain1_'+str(j+1)+'.vtk')
   os.rename('vtk/grain_2-polyhedra-00000001.vtk','vtk/grain2_'+str(j+1)+'.vtk')
+
+# -----------------------------------------------------------------------------#
+
+def compare_volumes(dict_user, dict_sample):
+    '''
+    Compare the volume of the contact in Moose and in Yade.
+    '''
+    # Yade
+    # already done in run_yade() in main.py
+
+    # Moose
+    # count
+    counter = 0
+    for i_y in range(len(dict_sample['y_L'])):
+        for i_x in range(len(dict_sample['x_L'])):
+            if dict_sample['eta_1_map'][i_y, i_x] > 0.5 and dict_sample['eta_2_map'][i_y, i_x] > 0.5:
+                counter = counter + 1
+    # adapt
+    contact_volume_moose = counter * 1*(dict_sample['x_L'][1]-dict_sample['x_L'][0])*(dict_sample['y_L'][1]-dict_sample['y_L'][0])
+    # tracker
+    dict_user['L_contact_volume_moose'].append(contact_volume_moose)
+
+    # plot
+    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+    ax1.plot(dict_user['L_contact_volume_yade'], label='Yade')
+    ax1.plot(dict_user['L_contact_volume_moose'], label='Moose')
+    ax1.legend()
+    ax1.set_title(r'Contact volume ($m^3$)',fontsize = 30)
+    fig.savefig('plot/contact_volumes.png')
+    plt.close(fig)
+
+    # convert in nb of node
+    L_nb_mesh_contact = []
+    for i in range(len(dict_user['L_contact_volume_moose'])):
+        L_nb_mesh_contact.append(dict_user['L_contact_volume_moose'][i]/(1*(dict_sample['x_L'][1]-dict_sample['x_L'][0])*(dict_sample['y_L'][1]-dict_sample['y_L'][0])))
+    # plot
+    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+    ax1.plot(L_nb_mesh_contact)
+    ax1.set_title(r'Number of node in contact volume (-)',fontsize = 30)
+    fig.savefig('plot/contact_nb_node.png')
+    plt.close(fig)

@@ -16,7 +16,7 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 50 # number of PFDEM iterations
+    n_DEMPF_ite = 100 # number of PFDEM iterations
     n_proc = 6 # number of processors used
     j_total = 0 # index global of results
 
@@ -24,14 +24,14 @@ def get_parameters():
     # DEM (Yade)
 
     # steady state detection
-    n_ite_max = 100000 # maximum number of iteration during a DEM step
+    n_ite_max = 2000 # maximum number of iteration during a DEM step
     n_steady_state_detection = 100 # number of iterations considered in the window
     # the difference between max and min < tolerance * force_applied
-    steady_state_detection = 0.01
+    steady_state_detection = 0.02
     # + the force applied must be contained in this window
 
     # sollicitation
-    force_applied = 1e7 # N
+    force_applied = 2e7 # N
 
     # DEM material parameters
     # Young modulus
@@ -45,17 +45,17 @@ def get_parameters():
     # the radius of grains
     radius = 1 # m
     # discretization of the grain
-    n_phi = 30
+    n_phi = 40
 
     #---------------------------------------------------------------------#
     # Phase-Field (Moose)
 
     # mesh
-    x_min = -1.1*radius
-    x_max =  1.1*radius
+    x_min = -1.15*radius
+    x_max =  1.15*radius
     n_mesh_x = 100
-    y_min = -2.1*radius
-    y_max =  2.1*radius
+    y_min = -2.15*radius
+    y_max =  2.15*radius
     n_mesh_y = 200
 
     # PF material parameters
@@ -95,6 +95,26 @@ def get_parameters():
     L_sum_eta_2 = []
     L_sum_c = []
     L_sum_mass = []
+    L_m_eta_1 = []
+    L_m_eta_2 = []
+    L_m_c = []
+    L_m_mass = []
+    L_distance_extrema = []
+    L_equivalent_area = []
+    L_contact_overlap = []
+    L_contact_area = []
+    L_contact_volume_yade = []
+    L_contact_volume_moose = []
+    L_t_pf_to_dem_1 = []
+    L_t_pf_to_dem_2 = []
+    L_t_dem = []
+    L_t_dem_to_pf = []
+    L_t_pf = []
+    L_P_applied = []
+    L_n_v_1 = []
+    L_n_v_2 = []
+    L_n_v_1_target = []
+    L_n_v_2_target = []
 
     #---------------------------------------------------------------------#
     # dictionnary
@@ -134,7 +154,27 @@ def get_parameters():
     'L_sum_eta_1': L_sum_eta_1,
     'L_sum_eta_2': L_sum_eta_2,
     'L_sum_c': L_sum_c,
-    'L_sum_mass': L_sum_mass
+    'L_sum_mass': L_sum_mass,
+    'L_m_eta_1': L_m_eta_1,
+    'L_m_eta_2': L_m_eta_2,
+    'L_m_c': L_m_c,
+    'L_m_mass': L_m_mass,
+    'L_distance_extrema': L_distance_extrema,
+    'L_equivalent_area': L_equivalent_area,
+    'L_contact_overlap': L_contact_overlap,
+    'L_contact_area': L_contact_area,
+    'L_contact_volume_yade': L_contact_volume_yade,
+    'L_contact_volume_moose': L_contact_volume_moose,
+    'L_t_pf_to_dem_1': L_t_pf_to_dem_1,
+    'L_t_pf_to_dem_2': L_t_pf_to_dem_2,
+    'L_t_dem': L_t_dem,
+    'L_t_dem_to_pf': L_t_dem_to_pf,
+    'L_t_pf': L_t_pf,
+    'L_P_applied': L_P_applied,
+    'L_n_v_1': L_n_v_1,
+    'L_n_v_2': L_n_v_2,
+    'L_n_v_1_target': L_n_v_1_target,
+    'L_n_v_2_target': L_n_v_2_target
     }
 
     return dict_user

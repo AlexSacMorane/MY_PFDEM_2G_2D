@@ -46,93 +46,6 @@ def create_polyhedral():
 
 # -----------------------------------------------------------------------------#
 
-def create_potential_block():
-    '''
-    Recreate potential blocks from data extrapolated with phase field output.
-    '''
-    print("Creating potential block")
-
-    # g1, bottom grain, fixed
-    a_L = []
-    b_L = []
-    c_L = []
-    d_L = []
-    for i in range(len(L_n_plane_1)):
-        a_L.append(float(L_n_plane_1[i][0]))
-        b_L.append(float(L_n_plane_1[i][1]))
-        c_L.append(0)
-        d_L.append(float(abs(L_d_plane_1[i]))-r)
-    # z+
-    a_L.append(0)
-    b_L.append(0)
-    c_L.append(1)
-    d_L.append(2*r-r)
-    # z-
-    a_L.append(0)
-    b_L.append(0)
-    c_L.append(-1)
-    d_L.append(2*r-r)
-    g1 = Body()
-    g1.aspherical = True
-    g1.shape = PotentialBlock(
-            a=a_L,
-            b=b_L,
-            c=c_L,
-            d=d_L,
-            r=r,
-            R=0.0,
-            AabbMinMax=True,
-            isBoundary=True,
-            color = [0,0,1]
-    )
-    utils._commonBodySetup(g1, g1.shape.volume, g1.shape.inertia, material='frictMat', pos=[pos_1[0], pos_1[1], 0], fixed=True)
-    g1.state.ori = g1.shape.orientation
-    O.bodies.append(g1)
-
-    # g2, top grain
-    a_L = []
-    b_L = []
-    c_L = []
-    d_L = []
-    for i in range(len(L_n_plane_2)):
-        a_L.append(float(L_n_plane_2[i][0]))
-        b_L.append(float(L_n_plane_2[i][1]))
-        c_L.append(0)
-        d_L.append(float(abs(L_d_plane_2[i]))-r)
-    # z+
-    a_L.append(0)
-    b_L.append(0)
-    c_L.append(1)
-    d_L.append(2*r-r)
-    # z-
-    a_L.append(0)
-    b_L.append(0)
-    c_L.append(-1)
-    d_L.append(2*r-r)
-    g2 = Body()
-    g2.aspherical = True
-    g2.shape = PotentialBlock(
-            a=a_L,
-            b=b_L,
-            c=c_L,
-            d=d_L,
-            r=r,
-            R=0.0,
-            AabbMinMax=True,
-            isBoundary=False,
-            color = [1,0,0]
-    )
-    utils._commonBodySetup(g2, g2.shape.volume, g2.shape.inertia, material='frictMat', pos=[pos_2[0], pos_2[1], 0], fixed=True, blockedDOFs='xzXYZ')
-    g2.state.ori = g2.shape.orientation
-    O.bodies.append(g2)
-
-    # initial export
-    vtkExporter.exportPotentialBlocks(what=dict(color='b.shape.color'))
-    vtkExporter_1.exportPotentialBlocks(ids=[0])
-    vtkExporter_2.exportPotentialBlocks(ids=[1])
-
-# -----------------------------------------------------------------------------#
-
 def applied_force():
     '''
     Apply force on the top grain
@@ -161,7 +74,6 @@ def add_data():
         volume = 0
         normal_force = 0
     plot.addData(iteration=O.iter, overlap=overlap, volume=volume, normal_force=normal_force, force_applied=force_applied)
-
 
 # -----------------------------------------------------------------------------#
 

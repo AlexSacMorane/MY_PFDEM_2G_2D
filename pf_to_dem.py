@@ -82,11 +82,15 @@ def read_vtk(dict_user, dict_sample, j_str):
     eta_1_map_old = dict_sample['eta_1_map'].copy()
     eta_2_map_old = dict_sample['eta_2_map'].copy()
     c_map_old = dict_sample['c_map'].copy()
-    L_XYZ = []
     L_eta1 = []
     L_eta2 = []
     L_c = []
-    L_limits = []
+    if not dict_sample['Map_known']:
+        L_limits = []
+        L_XYZ = []
+        L_L_i_XYZ_used = []
+    else :
+        L_XYZ = dict_sample['L_XYZ']
 
     # iterate on the proccessors used
     for i_proc in range(dict_user['n_proc']):
@@ -111,57 +115,78 @@ def read_vtk(dict_user, dict_sample, j_str):
         eta2_array = vtk_to_numpy(eta2_vtk_array)
         c_array = vtk_to_numpy(c_vtk_array)
 
-        # look for limits
-        x_min = None
-        x_max = None
-        y_min = None
-        y_max = None
-
-        # Must detect common zones between processors
-        for i_XYZ in range(len(nodes_array)) :
-            XYZ = nodes_array[i_XYZ]
-            # Do not consider twice a point
-            if list(XYZ) not in L_XYZ :
-                L_XYZ.append(list(XYZ))
-                L_eta1.append(eta1_array[i_XYZ])
-                L_eta2.append(eta2_array[i_XYZ])
-                L_c.append(c_array[i_XYZ])
-                # set first point
-                if x_min == None :
-                    x_min = list(XYZ)[0]
-                    x_max = list(XYZ)[0]
-                    y_min = list(XYZ)[1]
-                    y_max = list(XYZ)[1]
-                # look for limits of the processor
-                else :
-                    if list(XYZ)[0] < x_min:
+        # map is not know
+        if not dict_sample['Map_known']:
+            # look for limits
+            x_min = None
+            x_max = None
+            y_min = None
+            y_max = None
+            # save the map
+            L_i_XYZ_used = []
+            # Must detect common zones between processors
+            for i_XYZ in range(len(nodes_array)) :
+                XYZ = nodes_array[i_XYZ]
+                # Do not consider twice a point
+                if list(XYZ) not in L_XYZ :
+                    L_XYZ.append(list(XYZ))
+                    L_eta1.append(eta1_array[i_XYZ])
+                    L_eta2.append(eta2_array[i_XYZ])
+                    L_c.append(c_array[i_XYZ])
+                    L_i_XYZ_used.append(i_XYZ)
+                    # set first point
+                    if x_min == None :
                         x_min = list(XYZ)[0]
-                    if list(XYZ)[0] > x_max:
                         x_max = list(XYZ)[0]
-                    if list(XYZ)[1] < y_min:
                         y_min = list(XYZ)[1]
-                    if list(XYZ)[1] > y_max:
                         y_max = list(XYZ)[1]
+                    # look for limits of the processor
+                    else :
+                        if list(XYZ)[0] < x_min:
+                            x_min = list(XYZ)[0]
+                        if list(XYZ)[0] > x_max:
+                            x_max = list(XYZ)[0]
+                        if list(XYZ)[1] < y_min:
+                            y_min = list(XYZ)[1]
+                        if list(XYZ)[1] > y_max:
+                            y_max = list(XYZ)[1]
+            # Here the algorithm can be help as the mapping is known
+            L_L_i_XYZ_used.append(L_i_XYZ_used)
+            # save limits
+            L_limits.append([x_min,x_max,y_min,y_max])
 
-        # Here the algorithm can be help as the mapping is known
+        # map is known
+        else :
+            # the last term considered is at the end of the list
+            if dict_sample['L_L_i_XYZ_used'][i_proc][-1] == len(nodes_array)-1:
+                L_eta1 = list(L_eta1) + list(eta1_array)
+                L_eta2 = list(L_eta2) + list(eta2_array)
+                L_c = list(L_c) + list(c_array)
+            # the last term considered is not at the end of the list
+            else :
+                L_eta1 = list(L_eta1) + list(eta1_array[dict_sample['L_L_i_XYZ_used'][i_proc][0]: dict_sample['L_L_i_XYZ_used'][i_proc][-1]+1])
+                L_eta2 = list(L_eta2) + list(eta2_array[dict_sample['L_L_i_XYZ_used'][i_proc][0]: dict_sample['L_L_i_XYZ_used'][i_proc][-1]+1])
+                L_c = list(L_c) + list(c_array[dict_sample['L_L_i_XYZ_used'][i_proc][0]: dict_sample['L_L_i_XYZ_used'][i_proc][-1]+1])
 
-        # save limits
-        L_limits.append([x_min,x_max,y_min,y_max])
-
-    # plot processors distribution
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    # parameters
-    title_fontsize = 20
-    for i_proc in range(len(L_limits)):
-        limits = L_limits[i_proc]
-        ax1.plot([limits[0],limits[1],limits[1],limits[0],limits[0]],[limits[2],limits[2],limits[3],limits[3],limits[2]], label='proc '+str(i_proc))
-    ax1.legend()
-    ax1.set_xlabel('X (m)')
-    ax1.set_ylabel('Y (m)')
-    ax1.set_title('Processor i has the priority on i+1',fontsize = title_fontsize)
-    fig.suptitle('Processors ditribution',fontsize = 1.2*title_fontsize)
-    fig.savefig('plot/processors_distribution.png')
-    plt.close(fig)
+    if not dict_sample['Map_known']:
+        # plot processors distribution
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        # parameters
+        title_fontsize = 20
+        for i_proc in range(len(L_limits)):
+            limits = L_limits[i_proc]
+            ax1.plot([limits[0],limits[1],limits[1],limits[0],limits[0]],[limits[2],limits[2],limits[3],limits[3],limits[2]], label='proc '+str(i_proc))
+        ax1.legend()
+        ax1.set_xlabel('X (m)')
+        ax1.set_ylabel('Y (m)')
+        ax1.set_title('Processor i has the priority on i+1',fontsize = title_fontsize)
+        fig.suptitle('Processors ditribution',fontsize = 1.2*title_fontsize)
+        fig.savefig('plot/processors_distribution.png')
+        plt.close(fig)
+        # the map is known
+        dict_sample['Map_known'] = True
+        dict_sample['L_L_i_XYZ_used'] = L_L_i_XYZ_used
+        dict_sample['L_XYZ'] = L_XYZ
 
     # rebuild map from lists
     for i_XYZ in range(len(L_XYZ)):
