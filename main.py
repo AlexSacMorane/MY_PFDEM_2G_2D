@@ -60,6 +60,37 @@ def run_yade(dict_user, dict_sample):
     tac_pf_to_dem = time.perf_counter() # compute pf_to_dem performances
     dict_user['L_t_pf_to_dem_1'].append(tac_pf_to_dem-tic_pf_to_dem)
 
+    # shape evolution
+    with open('data/planes.data', 'rb') as handle:
+        dict_save = pickle.load(handle)
+    # save initial shapes
+    if dict_user['L_vertices_1_init'] == None:
+        dict_user['L_vertices_1_init'] = dict_save['L_vertices_1']
+        dict_user['L_vertices_2_init'] = dict_save['L_vertices_2']
+    #compare current shape and initial one
+    else :
+        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(16,9))
+        # g1
+        L_x, L_y = tuplet_to_list(dict_user['L_vertices_1_init']) # from tools.py
+        ax1.plot(L_x, L_y, label='Initial')
+        L_x, L_y = tuplet_to_list(dict_save['L_vertices_1']) # from tools.py
+        ax1.plot(L_x, L_y, label='Current')
+        ax1.legend()
+        ax1.axis('equal')
+        ax1.set_title(r'G1',fontsize=20)
+        # g2
+        L_x, L_y = tuplet_to_list(dict_user['L_vertices_2_init']) # from tools.py
+        ax2.plot(L_x, L_y, label='Initial')
+        L_x, L_y = tuplet_to_list(dict_save['L_vertices_2']) # from tools.py
+        ax2.plot(L_x, L_y, label='Current')
+        ax2.legend()
+        ax2.axis('equal')
+        ax2.set_title(r'G2',fontsize=20)
+        # close
+        plt.suptitle('Shapes evolution', fontsize=20)
+        fig.savefig('plot/shape_evolution.png')
+        plt.close(fig)
+
     # transmit data
     dict_save = {
     'E': dict_user['E'],

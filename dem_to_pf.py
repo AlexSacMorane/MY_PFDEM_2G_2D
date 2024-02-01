@@ -84,6 +84,7 @@ def compute_ed(dict_user, dict_sample):
         dict_save = pickle.load(handle)
     contact_area = dict_save['equivalent_area']
     normalForce = dict_save['normalForce']
+    contactPoint = dict_save['contact_point']
 
     # tracker
     dict_user['L_P_applied'].append(np.linalg.norm(normalForce)/contact_area)
@@ -135,6 +136,23 @@ def compute_ed(dict_user, dict_sample):
     ax1.plot(dict_user['L_m_ed'])
     ax1.set_title('Mean tilting factor (-)',fontsize=20)
     fig.savefig('plot/m_ed.png')
+    plt.close(fig)
+
+    # find nearest node to contact point
+    L_search = list(abs(np.array(dict_sample['x_L']-contactPoint[0])))
+    i_x = L_search.index(min(L_search))
+    L_search = list(abs(np.array(dict_sample['y_L']-contactPoint[1])))
+    i_y = L_search.index(min(L_search))
+
+    # tracker
+    dict_user['L_ed_contact_point'].append(dict_sample['ed_map'][-1-i_y, i_x])
+
+    # plot
+    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+    # overlap
+    ax1.plot(dict_user['L_ed_contact_point'])
+    ax1.set_title('Tilting factor at contact point (-)',fontsize=20)
+    fig.savefig('plot/contact_ed.png')
     plt.close(fig)
 
     # write ed

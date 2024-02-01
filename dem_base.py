@@ -89,7 +89,8 @@ dict_save = {
 'n_v_1': n_v_1,
 'n_v_2': n_v_2,
 'n_v_1_target': len(L_vertices_1),
-'n_v_2_target': len(L_vertices_2)
+'n_v_2_target': len(L_vertices_2),
+'contact_point': np.array(O.interactions[0,1].geom.contactPoint)
 }
 with open('data/dem_to_main.data', 'wb') as handle:
     pickle.dump(dict_save, handle, protocol=pickle.HIGHEST_PROTOCOL)

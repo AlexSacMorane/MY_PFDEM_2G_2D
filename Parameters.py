@@ -16,7 +16,7 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 100 # number of PFDEM iterations
+    n_DEMPF_ite = 50 # number of PFDEM iterations
     n_proc = 6 # number of processors used
     j_total = 0 # index global of results
 
@@ -51,11 +51,11 @@ def get_parameters():
     # Phase-Field (Moose)
 
     # mesh
-    x_min = -1.15*radius
-    x_max =  1.15*radius
+    x_min = -1.3*radius
+    x_max =  1.3*radius
     n_mesh_x = 100
-    y_min = -2.15*radius
-    y_max =  2.15*radius
+    y_min = -2.3*radius
+    y_max =  2.3*radius
     n_mesh_y = 200
 
     # PF material parameters
@@ -66,25 +66,25 @@ def get_parameters():
     # the interface thickness
     w = ((x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1))*n_int
     # the gradient coefficient
-    kappa_eta = Energy_barrier*w*w/9.68
+    kappa_eta = Energy_barrier*w*w/15
     # the mobility
     Mobility = 3/2.2*w
     Mobility_eff = 2.2/3*Mobility/w
     # the time stepping and duration of one PF simualtion
-    dt_PF = 0.0005 # time step
-    n_t_PF = 5 # number of iterations
+    dt_PF = 0.05 # time step
+    n_t_PF = 10 # number of iterations
     # n_t_PF*dt_PF gives the total time duration
 
     # kinetics of dissolution and precipitation
     # it affects the tilting coefficient in Ed
-    k_diss = 0.5 # mol.m-2.s-1
+    k_diss = 0.01 # mol.m-2.s-1
     k_prec = k_diss
 
     # molar concentration at the equilibrium
     C_eq = 1 # number of C_ref, mol m-3
 
     # diffusion of the solute
-    D_solute = 1000 # m2 s-1
+    D_solute = 1 # m2 s-1
     struct_element = np.array(np.ones((3,3)), dtype=bool) # for dilation
 
     #---------------------------------------------------------------------#
@@ -116,6 +116,8 @@ def get_parameters():
     L_n_v_1_target = []
     L_n_v_2_target = []
     L_m_ed = []
+    L_ed_contact_point = []
+    L_vertices_1_init = None
 
     #---------------------------------------------------------------------#
     # dictionnary
@@ -176,7 +178,9 @@ def get_parameters():
     'L_n_v_2': L_n_v_2,
     'L_n_v_1_target': L_n_v_1_target,
     'L_n_v_2_target': L_n_v_2_target,
-    'L_m_ed': L_m_ed
+    'L_m_ed': L_m_ed,
+    'L_ed_contact_point': L_ed_contact_point,
+    'L_vertices_1_init': L_vertices_1_init
     }
 
     return dict_user
