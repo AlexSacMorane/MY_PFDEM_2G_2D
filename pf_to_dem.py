@@ -82,15 +82,11 @@ def read_vtk(dict_user, dict_sample, j_str):
     eta_1_map_old = dict_sample['eta_1_map'].copy()
     eta_2_map_old = dict_sample['eta_2_map'].copy()
     c_map_old = dict_sample['c_map'].copy()
+    L_XYZ = []
     L_eta1 = []
     L_eta2 = []
     L_c = []
-    if not dict_sample['Map_known']:
-        L_limits = []
-        L_XYZ = []
-        L_L_i_XYZ_used = []
-    else :
-        L_XYZ = dict_sample['L_XYZ']
+    L_limits = []
 
     # iterate on the proccessors used
     for i_proc in range(dict_user['n_proc']):
@@ -115,78 +111,57 @@ def read_vtk(dict_user, dict_sample, j_str):
         eta2_array = vtk_to_numpy(eta2_vtk_array)
         c_array = vtk_to_numpy(c_vtk_array)
 
-        # map is not know
-        if not dict_sample['Map_known']:
-            # look for limits
-            x_min = None
-            x_max = None
-            y_min = None
-            y_max = None
-            # save the map
-            L_i_XYZ_used = []
-            # Must detect common zones between processors
-            for i_XYZ in range(len(nodes_array)) :
-                XYZ = nodes_array[i_XYZ]
-                # Do not consider twice a point
-                if list(XYZ) not in L_XYZ :
-                    L_XYZ.append(list(XYZ))
-                    L_eta1.append(eta1_array[i_XYZ])
-                    L_eta2.append(eta2_array[i_XYZ])
-                    L_c.append(c_array[i_XYZ])
-                    L_i_XYZ_used.append(i_XYZ)
-                    # set first point
-                    if x_min == None :
+        # look for limits
+        x_min = None
+        x_max = None
+        y_min = None
+        y_max = None
+
+        # Must detect common zones between processors
+        for i_XYZ in range(len(nodes_array)) :
+            XYZ = nodes_array[i_XYZ]
+            # Do not consider twice a point
+            if list(XYZ) not in L_XYZ :
+                L_XYZ.append(list(XYZ))
+                L_eta1.append(eta1_array[i_XYZ])
+                L_eta2.append(eta2_array[i_XYZ])
+                L_c.append(c_array[i_XYZ])
+                # set first point
+                if x_min == None :
+                    x_min = list(XYZ)[0]
+                    x_max = list(XYZ)[0]
+                    y_min = list(XYZ)[1]
+                    y_max = list(XYZ)[1]
+                # look for limits of the processor
+                else :
+                    if list(XYZ)[0] < x_min:
                         x_min = list(XYZ)[0]
+                    if list(XYZ)[0] > x_max:
                         x_max = list(XYZ)[0]
+                    if list(XYZ)[1] < y_min:
                         y_min = list(XYZ)[1]
+                    if list(XYZ)[1] > y_max:
                         y_max = list(XYZ)[1]
-                    # look for limits of the processor
-                    else :
-                        if list(XYZ)[0] < x_min:
-                            x_min = list(XYZ)[0]
-                        if list(XYZ)[0] > x_max:
-                            x_max = list(XYZ)[0]
-                        if list(XYZ)[1] < y_min:
-                            y_min = list(XYZ)[1]
-                        if list(XYZ)[1] > y_max:
-                            y_max = list(XYZ)[1]
-            # Here the algorithm can be help as the mapping is known
-            L_L_i_XYZ_used.append(L_i_XYZ_used)
-            # save limits
-            L_limits.append([x_min,x_max,y_min,y_max])
 
-        # map is known
-        else :
-            # the last term considered is at the end of the list
-            if dict_sample['L_L_i_XYZ_used'][i_proc][-1] == len(nodes_array)-1:
-                L_eta1 = list(L_eta1) + list(eta1_array)
-                L_eta2 = list(L_eta2) + list(eta2_array)
-                L_c = list(L_c) + list(c_array)
-            # the last term considered is not at the end of the list
-            else :
-                L_eta1 = list(L_eta1) + list(eta1_array[dict_sample['L_L_i_XYZ_used'][i_proc][0]: dict_sample['L_L_i_XYZ_used'][i_proc][-1]+1])
-                L_eta2 = list(L_eta2) + list(eta2_array[dict_sample['L_L_i_XYZ_used'][i_proc][0]: dict_sample['L_L_i_XYZ_used'][i_proc][-1]+1])
-                L_c = list(L_c) + list(c_array[dict_sample['L_L_i_XYZ_used'][i_proc][0]: dict_sample['L_L_i_XYZ_used'][i_proc][-1]+1])
+        # Here the algorithm can be help as the mapping is known
 
-    if not dict_sample['Map_known']:
-        # plot processors distribution
-        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-        # parameters
-        title_fontsize = 20
-        for i_proc in range(len(L_limits)):
-            limits = L_limits[i_proc]
-            ax1.plot([limits[0],limits[1],limits[1],limits[0],limits[0]],[limits[2],limits[2],limits[3],limits[3],limits[2]], label='proc '+str(i_proc))
-        ax1.legend()
-        ax1.set_xlabel('X (m)')
-        ax1.set_ylabel('Y (m)')
-        ax1.set_title('Processor i has the priority on i+1',fontsize = title_fontsize)
-        fig.suptitle('Processors ditribution',fontsize = 1.2*title_fontsize)
-        fig.savefig('plot/processors_distribution.png')
-        plt.close(fig)
-        # the map is known
-        dict_sample['Map_known'] = True
-        dict_sample['L_L_i_XYZ_used'] = L_L_i_XYZ_used
-        dict_sample['L_XYZ'] = L_XYZ
+        # save limits
+        L_limits.append([x_min,x_max,y_min,y_max])
+
+    # plot processors distribution
+    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+    # parameters
+    title_fontsize = 20
+    for i_proc in range(len(L_limits)):
+        limits = L_limits[i_proc]
+        ax1.plot([limits[0],limits[1],limits[1],limits[0],limits[0]],[limits[2],limits[2],limits[3],limits[3],limits[2]], label='proc '+str(i_proc))
+    ax1.legend()
+    ax1.set_xlabel('X (m)')
+    ax1.set_ylabel('Y (m)')
+    ax1.set_title('Processor i has the priority on i+1',fontsize = title_fontsize)
+    fig.suptitle('Processors ditribution',fontsize = 1.2*title_fontsize)
+    fig.savefig('plot/processors_distribution.png')
+    plt.close(fig)
 
     # rebuild map from lists
     for i_XYZ in range(len(L_XYZ)):
@@ -291,99 +266,6 @@ def read_vtk_own(j_str):
     global L_n_plane_1, L_d_plane_1, L_n_plane_2, L_d_plane_2
     L_n_plane_1, L_d_plane_1 = interpolate_planes(eta_1_map, pos_1)
     L_n_plane_2, L_d_plane_2 = interpolate_planes(eta_2_map, pos_2)
-
-# -----------------------------------------------------------------------------#
-
-def compute_vertices(dict_user, dict_sample):
-    '''
-    From a phase map, compute vertices coordinates for polyhedral.
-    '''
-    # compute vertices
-    L_vertices_1 = interpolate_vertices(dict_sample['eta_1_map'], dict_sample['pos_1'], dict_user, dict_sample)
-    L_vertices_2 = interpolate_vertices(dict_sample['eta_2_map'], dict_sample['pos_2'], dict_user, dict_sample)
-
-    # save data
-    dict_save = {
-    'L_vertices_1': L_vertices_1,
-    'L_vertices_2': L_vertices_2
-    }
-    with open('data/planes.data', 'wb') as handle:
-        pickle.dump(dict_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-# -----------------------------------------------------------------------------#
-
-def interpolate_vertices(eta_i_map, center, dict_user, dict_sample):
-    '''
-    Interpolate vertices for polyhedral.
-    '''
-    map_phi = []
-    L_phi = []
-    for i_phi in range(dict_user['n_phi']):
-        phi = 2*math.pi*i_phi/dict_user['n_phi']
-        L_phi.append(phi)
-        map_phi.append([])
-    L_phi.append(2*math.pi)
-    for i_x in range(len(dict_sample['x_L'])-1):
-        for i_y in range(len(dict_sample['y_L'])-1):
-            L_in = [] # list the nodes inside the grain
-            if eta_i_map[-1-i_y    , i_x] > 0.5 :
-                L_in.append(0)
-            if eta_i_map[-1-(i_y+1), i_x] > 0.5 :
-                L_in.append(1)
-            if eta_i_map[-1-(i_y+1), i_x+1] > 0.5 :
-                L_in.append(2)
-            if eta_i_map[-1-i_y    , i_x+1] > 0.5 :
-                L_in.append(3)
-            if L_in != [] and L_in != [0,1,2,3]:
-                center_mesh = (np.array([dict_sample['x_L'][i_x], dict_sample['y_L'][i_y]])+np.array([dict_sample['x_L'][i_x+1], dict_sample['y_L'][i_y+1]]))/2
-                u = (center_mesh-np.array(center))/np.linalg.norm(center_mesh-np.array(center))
-                # compute phi
-                if u[1]>=0:
-                    phi = math.acos(u[0])
-                else :
-                    phi = 2*math.pi-math.acos(u[0])
-                # iterate on the lines of the mesh to find the plane intersection
-                L_p = []
-                if (0 in L_in and 1 not in L_in) or (0 not in L_in and 1 in L_in):# line 01
-                    x_p = dict_sample['x_L'][i_x]
-                    y_p = (0.5-eta_i_map[-1-i_y, i_x])/(eta_i_map[-1-(i_y+1), i_x]-eta_i_map[-1-i_y, i_x])*(dict_sample['y_L'][i_y+1]-dict_sample['y_L'][i_y])+dict_sample['y_L'][i_y]
-                    L_p.append(np.array([x_p, y_p]))
-                if (1 in L_in and 2 not in L_in) or (1 not in L_in and 2 in L_in):# line 12
-                    x_p = (0.5-eta_i_map[-1-(i_y+1), i_x])/(eta_i_map[-1-(i_y+1), i_x+1]-eta_i_map[-1-(i_y+1), i_x])*(dict_sample['x_L'][i_x+1]-dict_sample['x_L'][i_x])+dict_sample['x_L'][i_x]
-                    y_p = dict_sample['y_L'][i_y+1]
-                    L_p.append(np.array([x_p, y_p]))
-                if (2 in L_in and 3 not in L_in) or (2 not in L_in and 3 in L_in):# line 23
-                    x_p = dict_sample['x_L'][i_x+1]
-                    y_p = (0.5-eta_i_map[-1-i_y, i_x+1])/(eta_i_map[-1-(i_y+1), i_x+1]-eta_i_map[-1-i_y, i_x+1])*(dict_sample['y_L'][i_y+1]-dict_sample['y_L'][i_y])+dict_sample['y_L'][i_y]
-                    L_p.append(np.array([x_p, y_p]))
-                if (3 in L_in and 0 not in L_in) or (3 not in L_in and 0 in L_in):# line 30
-                    x_p = (0.5-eta_i_map[-1-i_y, i_x])/(eta_i_map[-1-i_y, i_x+1]-eta_i_map[-1-i_y, i_x])*(dict_sample['x_L'][i_x+1]-dict_sample['x_L'][i_x])+dict_sample['x_L'][i_x]
-                    y_p = dict_sample['y_L'][i_y]
-                    L_p.append(np.array([x_p, y_p]))
-                # compute the mean point
-                p_mean = np.array([0,0])
-                for p in L_p :
-                    p_mean = p_mean + p
-                p_mean = p_mean/len(L_p)
-                # look phi in L_phi
-                i_phi = 0
-                while not (L_phi[i_phi] <= phi and phi < L_phi[i_phi+1]) :
-                    i_phi = i_phi + 1
-                # save p_mean in the map
-                map_phi[i_phi].append(p_mean)
-
-    L_vertices = ()
-    # interpolate plane (Least squares method)
-    for i_phi in range(len(map_phi)):
-        # mean vertices
-        mean_v = np.array([0, 0])
-        for v_i in map_phi[i_phi]:
-            mean_v = mean_v + v_i/len(map_phi[i_phi])
-        # save
-        L_vertices = L_vertices + ((mean_v[0], mean_v[1], 0,),)
-        L_vertices = L_vertices + ((mean_v[0], mean_v[1], 1),)
-
-    return L_vertices
 
 # -----------------------------------------------------------------------------#
 
