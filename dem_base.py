@@ -22,7 +22,6 @@ pos_2 = dict_save['pos_2']
 n_ite_max = dict_save['n_ite_max']
 steady_state_detection = dict_save['steady_state_detection']
 n_steady_state_detection = dict_save['n_steady_state_detection']
-i_DEMPF_ite = dict_save['i_DEMPF_ite']
 
 # from plane interpolation
 with open('data/planes.data', 'rb') as handle:

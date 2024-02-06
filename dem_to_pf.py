@@ -75,9 +75,9 @@ def move_phasefield(dict_user, dict_sample):
 
 # -----------------------------------------------------------------------------#
 
-def compute_ed(dict_user, dict_sample):
+def compute_as(dict_user, dict_sample):
     '''
-    Compute sink/source term.
+    Compute activity of solid.
     '''
     # load data from dem
     with open('data/dem_to_main.data', 'rb') as handle:
@@ -98,7 +98,7 @@ def compute_ed(dict_user, dict_sample):
     plt.close(fig)
 
     # init
-    dict_sample['ed_map'] = np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x']))
+    dict_sample['as_map'] = np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x']))
     # cst
     R_gas = 82.06e5 # cm3 Pa K-1 mol-1
     Temp = 25+278   # K
@@ -111,25 +111,49 @@ def compute_ed(dict_user, dict_sample):
     for i_x in range(len(dict_sample['x_L'])):
         for i_y in range(len(dict_sample['y_L'])):
             # determine pressure
-            if dict_sample['eta_1_map'][i_y, i_x] > 0.5 and dict_sample['eta_2_map'][i_y, i_x] > 0.5: # in the contact
+            if dict_sample['eta_1_map'][i_y, i_x] > 0.05 and dict_sample['eta_2_map'][i_y, i_x] > 0.05: # in the contact
                 P =  np.linalg.norm(normalForce)/contact_area # Pa
+            #elif dict_sample['eta_1_map'][i_y, i_x] > 0.05 and dict_sample['eta_2_map'][i_y, i_x] > 0.5: # in g2 and the rest of g1
+            #    P =  np.linalg.norm(normalForce)/contact_area # Pa
+            #elif dict_sample['eta_1_map'][i_y, i_x] > 0.5 and dict_sample['eta_2_map'][i_y, i_x] > 0.05: # in g1 and the rest of g2
+            #    P =  np.linalg.norm(normalForce)/contact_area # Pa
             else : # not in the contact
                 P = 0 # Pa
-            r = s_mesh*math.exp(P*V_m/(R_gas*Temp))*(1-dict_sample['c_map'][i_y, i_x]/(dict_user['C_eq']*math.exp(P*V_m/(R_gas*Temp))))
-            if r >= 0 :
-                r = dict_user['k_diss']*r # dissolution rate
-            else :
-                r = dict_user['k_prec']*r # precipitation rate
-            # the rate is in mol s-1
-            r = r/v_mesh # convert in mol m-3 s-1
-            r = r*conv # convert in C_ref m-3 s-1
-            r = r*2/3 # convert in C_ref m-3
             # save in the map
-            dict_sample['ed_map'][i_y, i_x] = r
+            dict_sample['as_map'][i_y, i_x] = math.exp(P*V_m/(R_gas*Temp))
 
+    # write as
+    write_as_txt(dict_user, dict_sample)
+
+# -----------------------------------------------------------------------------#
+
+def compute_ed(dict_user, dict_sample):
+    '''
+    Compute the average ed in the sample and track ed value at the center of the contact.
+    '''
+    # constants
+    s_mesh = 1*(dict_sample['x_L'][1]-dict_sample['x_L'][0])
+    c_eq = 1
+    k_diss = dict_user['k_diss']
+    k_prec = dict_user['k_prec']
+    v_mesh = 1*(dict_sample['x_L'][1]-dict_sample['x_L'][0])*(dict_sample['y_L'][1]-dict_sample['y_L'][0])
+    conv = 1
+    # compute the map of ed
+    ed_map = np.zeros((len(dict_sample['y_L']), len(dict_sample['x_L'])))
+    # iterate on mesh
+    for i_x in range(len(dict_sample['x_L'])):
+        for i_y in range(len(dict_sample['y_L'])):
+            # read variables
+            as_value = dict_sample['as_map'][i_y, i_x]
+            c = dict_sample['c_map'][i_y, i_x]
+            # compute and build map
+            if c < c_eq*as_value:
+                ed_value = k_diss*s_mesh*as_value*(1-c/(c_eq*as_value))/v_mesh*conv*2/3
+            else :
+                ed_value = k_prec*s_mesh*as_value*(1-c/(c_eq*as_value))/v_mesh*conv*2/3
+            ed_map[i_y, i_x] = ed_value
     # tracker
-    dict_user['L_m_ed'].append(np.mean(dict_sample['ed_map']))
-
+    dict_user['L_m_ed'].append(np.mean(ed_map))
     # plot
     fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
     # overlap
@@ -137,16 +161,16 @@ def compute_ed(dict_user, dict_sample):
     ax1.set_title('Mean tilting factor (-)',fontsize=20)
     fig.savefig('plot/m_ed.png')
     plt.close(fig)
-
     # find nearest node to contact point
+    with open('data/dem_to_main.data', 'rb') as handle:
+        dict_save = pickle.load(handle)
+    contactPoint = dict_save['contact_point']
     L_search = list(abs(np.array(dict_sample['x_L']-contactPoint[0])))
     i_x = L_search.index(min(L_search))
     L_search = list(abs(np.array(dict_sample['y_L']-contactPoint[1])))
     i_y = L_search.index(min(L_search))
-
     # tracker
-    dict_user['L_ed_contact_point'].append(dict_sample['ed_map'][-1-i_y, i_x])
-
+    dict_user['L_ed_contact_point'].append(ed_map[-1-i_y, i_x])
     # plot
     fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
     # overlap
@@ -154,9 +178,6 @@ def compute_ed(dict_user, dict_sample):
     ax1.set_title('Tilting factor at contact point (-)',fontsize=20)
     fig.savefig('plot/contact_ed.png')
     plt.close(fig)
-
-    # write ed
-    write_ed_txt(dict_user, dict_sample)
 
 #-------------------------------------------------------------------------------
 
@@ -232,13 +253,13 @@ def write_c_txt(dict_user, dict_sample):
 
 #-------------------------------------------------------------------------------
 
-def write_ed_txt(dict_user, dict_sample):
+def write_as_txt(dict_user, dict_sample):
     '''
     Write a .txt file needed for MOOSE simulation.
 
-    This .txt represents the map of the external mechanical energy.
+    This .txt represents the map of the solid activity.
     '''
-    file_to_write = open('data/ed.txt','w')
+    file_to_write = open('data/as.txt','w')
     # x
     file_to_write.write('AXIS X\n')
     line = ''
@@ -257,7 +278,7 @@ def write_ed_txt(dict_user, dict_sample):
     file_to_write.write('DATA\n')
     for j in range(len(dict_sample['y_L'])):
         for i in range(len(dict_sample['x_L'])):
-            file_to_write.write(str(dict_sample['ed_map'][-1-j,i])+'\n')
+            file_to_write.write(str(dict_sample['as_map'][-1-j,i])+'\n')
     # close
     file_to_write.close()
 
@@ -349,9 +370,13 @@ def write_i(dict_user, dict_sample):
       line = line[:-1] + "'"+str(dict_user['Mobility_eff'])+' '+str(dict_user['kappa_eta'])+" 1'\n"
     elif j == 138:
       line = line[:-1] + ' ' + str(dict_user['Energy_barrier'])+"'\n"
-    elif j == 217:
+    elif j == 151:
+      line = line[:-1] + "'" + str(1*(dict_sample['x_L'][1]-dict_sample['x_L'][0]))\
+                       + ' 1 ' + str(dict_user['k_diss']) + ' ' + str(dict_user['k_prec']) + ' '\
+                       + str(1*(dict_sample['x_L'][1]-dict_sample['x_L'][0])*(dict_sample['y_L'][1]-dict_sample['y_L'][0])) + " 1'\n"
+    elif j == 219:
       line = line[:-1] + ' ' + str(dict_user['dt_PF']*dict_user['n_t_PF']) +'\n'
-    elif j == 221:
+    elif j == 223:
       line = line[:-1] + ' ' + str(dict_user['dt_PF']) +'\n'
     file_to_write.write(line)
 

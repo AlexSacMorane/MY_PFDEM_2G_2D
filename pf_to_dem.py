@@ -30,7 +30,7 @@ def sort_files(dict_user, dict_sample):
          <VTKFile type="PUnstructuredGrid" version="0.1" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
          \t<PUnstructuredGrid GhostLevel="1">
          \t\t<PPointData>
-         \t\t\t<PDataArray type="Float64" Name="ed"/>
+         \t\t\t<PDataArray type="Float64" Name="as"/>
          \t\t\t<PDataArray type="Float64" Name="kc"/>
          \t\t\t<PDataArray type="Float64" Name="eta1"/>
          \t\t\t<PDataArray type="Float64" Name="eta2"/>

@@ -91,7 +91,7 @@ def check():
         vtkExporter.exportPolyhedra(what=dict(color='b.shape.color')) # final export
         vtkExporter_1.exportPolyhedra(ids=[0])
         vtkExporter_2.exportPolyhedra(ids=[1])
-        plot.plot(noShow=True).savefig('plot/contact/contact_'+str(i_DEMPF_ite)+'.png')
+        plot.plot(noShow=True).savefig('plot/contact_dem.png')
         O.pause() # stop DEM simulation
 
 # -----------------------------------------------------------------------------#

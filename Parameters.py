@@ -16,9 +16,11 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 50 # number of PFDEM iterations
+    n_DEMPF_ite = 100 # number of PFDEM iterations
     n_proc = 6 # number of processors used
     j_total = 0 # index global of results
+    # indicate if the simulation is saved
+    save_simulation = False
 
     #---------------------------------------------------------------------#
     # DEM (Yade)
@@ -45,7 +47,7 @@ def get_parameters():
     # the radius of grains
     radius = 1 # m
     # discretization of the grain
-    n_phi = 40
+    n_phi = 60
 
     #---------------------------------------------------------------------#
     # Phase-Field (Moose)
@@ -66,26 +68,26 @@ def get_parameters():
     # the interface thickness
     w = ((x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1))*n_int
     # the gradient coefficient
-    kappa_eta = Energy_barrier*w*w/15
+    kappa_eta = Energy_barrier*w*w/9.86
     # the mobility
     Mobility = 3/2.2*w
     Mobility_eff = 2.2/3*Mobility/w
     # the time stepping and duration of one PF simualtion
-    dt_PF = 0.05 # time step
-    n_t_PF = 10 # number of iterations
+    dt_PF = 0.001 # time step
+    n_t_PF = 3 # number of iterations
     # n_t_PF*dt_PF gives the total time duration
 
     # kinetics of dissolution and precipitation
     # it affects the tilting coefficient in Ed
-    k_diss = 0.01 # mol.m-2.s-1
+    k_diss = 1 # mol.m-2.s-1
     k_prec = k_diss
 
     # molar concentration at the equilibrium
     C_eq = 1 # number of C_ref, mol m-3
 
     # diffusion of the solute
-    D_solute = 1 # m2 s-1
-    struct_element = np.array(np.ones((3,3)), dtype=bool) # for dilation
+    D_solute = 0.1 # m2 s-1
+    struct_element = np.array(np.ones((6,6)), dtype=bool) # for dilation
 
     #---------------------------------------------------------------------#
     # trackers
@@ -126,6 +128,7 @@ def get_parameters():
     'n_DEMPF_ite': n_DEMPF_ite,
     'n_proc': n_proc,
     'j_total': j_total,
+    'save_simulation': save_simulation,
     'n_ite_max': n_ite_max,
     'n_steady_state_detection': n_steady_state_detection,
     'steady_state_detection': steady_state_detection,

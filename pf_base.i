@@ -122,11 +122,11 @@
     prop_values = kc_txt
     outputs = exodus
   [../]
-  [./edmap]
+  [./asmap]
     type = GenericFunctionMaterial
     block = 0
-    prop_names = ed
-    prop_values = ed_txt
+    prop_names = as
+    prop_values = as_txt
     outputs = exodus
   [../]
   [./free_energy_etai]
@@ -145,9 +145,11 @@
   type = DerivativeParsedMaterial
     block = 0
     property_name = Ed
-    coupled_variables = 'eta1 eta2'
-    material_property_names = 'ed'
-    expression = 'ed*3*eta1^2-ed*2*eta1^3+ed*3*eta2^2-ed*2*eta2^3'
+    coupled_variables = 'eta1 eta2 c'
+    material_property_names = 'as'
+    constant_names = 's_mesh c_eq k_diss k_prec v_mesh conv'
+    constant_expressions =
+    expression = 'if(c<c_eq*as,k_diss*s_mesh*as*(1-c/(c_eq*as))/v_mesh*conv*2/3*(3*eta1^2-2*eta1^3+3*eta2^2-2*eta2^3),k_prec*s_mesh*as*(1-c/(c_eq*as))/v_mesh*conv*2/3*(3*eta1^2-2*eta1^3+3*eta2^2-2*eta2^3))'
     enable_jit = true
     derivative_order = 2
     # outputs = exodus
@@ -178,9 +180,9 @@
     type = PiecewiseMultilinear
     data_file = data/c.txt
   []
-	[ed_txt]
+	[as_txt]
 		type = PiecewiseMultilinear
-		data_file = data/ed.txt
+		data_file = data/as.txt
 	[]
 	[kc_txt]
 		type = PiecewiseMultilinear
