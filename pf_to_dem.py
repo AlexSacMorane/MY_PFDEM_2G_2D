@@ -292,3 +292,43 @@ def interpolate_vertices(eta_i_map, center, dict_user, dict_sample):
         L_vertices = L_vertices + ((mean_v[0], mean_v[1], 1),)
 
     return L_vertices
+
+# -----------------------------------------------------------------------------#
+
+def control_force(dict_user, dict_sample):
+    '''
+    Control force applied in DEM with the contact volume.
+
+    Because of the fact that convvex shape is not possible in Yade.
+    '''
+    # determine the volume contact in Moose (etai ad j > 0.5)
+    V_contact_moose = 0
+    for i_x in range(len(dict_sample['x_L'])):
+        for i_y in range(len(dict_sample['y_L'])):
+            if dict_sample['eta_1_map'][i_y, i_x] > 0.5 and dict_sample['eta_2_map'][i_y, i_x] > 0.5:
+                V_contact_moose = V_contact_moose + (dict_sample['x_L'][1]-dict_sample['x_L'][0])*(dict_sample['y_L'][1]-dict_sample['y_L'][0])*1
+
+    # compare with the volume contact expected
+    # in Yade, F=k*V and 1/k = 1/Y1 + 1/Y2
+    V_expected = 2*dict_user['force_applied_target']/dict_user['E']
+    # the comparison is important if multiple controls are done per one PFDEM iteration
+    # if only only control is done, the adaptation of the force can be done always
+    #if V_contact_moose < (1-dict_user['steady_state_detection'])*V_expected or (1+dict_user['steady_state_detection'])*V_expected < V_contact_moose:
+    if True:
+        # control the force applied
+        dict_user['force_applied'] = dict_user['force_applied']*V_expected/V_contact_moose
+
+    # save and plot
+    dict_user['L_force_applied'].append(dict_user['force_applied'])
+    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+    ax1.plot(dict_user['L_force_applied'])
+    plt.suptitle('Force applied in Yade (DEM)', fontsize=20)
+    fig.savefig('plot/force_applied.png')
+    plt.close(fig)
+
+
+
+
+
+
+

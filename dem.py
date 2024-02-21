@@ -91,7 +91,10 @@ def check():
         vtkExporter.exportPolyhedra(what=dict(color='b.shape.color')) # final export
         vtkExporter_1.exportPolyhedra(ids=[0])
         vtkExporter_2.exportPolyhedra(ids=[1])
-        plot.plot(noShow=True).savefig('plot/contact_dem.png')
+        if print_all_contact_dem:
+            plot.plot(noShow=True).savefig('plot/contact_dem/'+str(i_DEMPF_ite)+'.png')
+        else:
+            plot.plot(noShow=True).savefig('plot/contact_dem.png')
         O.pause() # stop DEM simulation
 
 # -----------------------------------------------------------------------------#
@@ -100,13 +103,23 @@ def compute_dt():
     '''
     Compute the time step used in the DEM step.
     '''
-    O.dt = 0.1 * polyhedra_utils.PWaveTimeStep()
+    O.dt = 0.02 * polyhedra_utils.PWaveTimeStep()
 
 # -----------------------------------------------------------------------------#
 
 def create_engines():
     '''
     Create engines.
+
+    Ip2_PolyhedraMat_PolyhedraMat_PolyhedraPhys 
+    Normal: 1/kn = 1/Y1 + 1/Y2 
+    Shear: 1/ks = 1/Y1v1 + 1/Y2v2
+    Y is the Young modulus
+    v is the Poisson ratio
+
+    Law2_PolyhedraGeom_PolyhedraPhys_Volumetric 
+    F = k N
+    Force is proportionnal to the volume
     '''
     O.engines = [
             ForceResetter(),

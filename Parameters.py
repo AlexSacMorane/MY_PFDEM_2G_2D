@@ -19,8 +19,12 @@ def get_parameters():
     n_DEMPF_ite = 100 # number of PFDEM iterations
     n_proc = 6 # number of processors used
     j_total = 0 # index global of results
-    # indicate if the simulation is saved
-    save_simulation = False
+    save_simulation = False # indicate if the simulation is saved
+    n_max_vtk_files = 50 # maximum number of vtk files (can be None to save all files)
+
+    # Figure (plot all or current)
+    # The maps configuration
+    print_all_map_config = True # else only the current one is printed
 
     #---------------------------------------------------------------------#
     # DEM (Yade)
@@ -33,7 +37,8 @@ def get_parameters():
     # + the force applied must be contained in this window
 
     # sollicitation
-    force_applied = 2e7 # N
+    force_applied = 3e7 # N
+    control_force = True # Boolean to determine if the force is controled with the contact volume
 
     # DEM material parameters
     # Young modulus
@@ -41,8 +46,18 @@ def get_parameters():
     # Poisson ratio
     Poisson = 0.3
 
+    # Figure (plot all or current)
+    # The evolution of the overlap durig DEM steps
+    print_all_contact_dem = True # else only the current one is printed
+    # The evolution of shape (compared to the initial state)
+    print_all_shape_evolution = True # else only the current one is printed
+
     #---------------------------------------------------------------------#
     # Grain description
+
+    # shape of the grain
+    # Sphere, Hex or Proxy_Hex
+    Shape = 'Sphere'
 
     # the radius of grains
     radius = 1 # m
@@ -55,10 +70,10 @@ def get_parameters():
     # mesh
     x_min = -1.3*radius
     x_max =  1.3*radius
-    n_mesh_x = 100
+    n_mesh_x = 200
     y_min = -2.3*radius
     y_max =  2.3*radius
-    n_mesh_y = 200
+    n_mesh_y = 400
 
     # PF material parameters
     # the energy barrier
@@ -72,22 +87,38 @@ def get_parameters():
     # the mobility
     Mobility = 3/2.2*w
     Mobility_eff = 2.2/3*Mobility/w
-    # the time stepping and duration of one PF simualtion
-    dt_PF = 0.001 # time step
-    n_t_PF = 3 # number of iterations
-    # n_t_PF*dt_PF gives the total time duration
 
     # kinetics of dissolution and precipitation
     # it affects the tilting coefficient in Ed
-    k_diss = 1 # mol.m-2.s-1
+    k_diss = 0.1 # mol.m-2.s-1
     k_prec = k_diss
 
     # molar concentration at the equilibrium
     C_eq = 1 # number of C_ref, mol m-3
 
     # diffusion of the solute
-    D_solute = 0.1 # m2 s-1
-    struct_element = np.array(np.ones((6,6)), dtype=bool) # for dilation
+    D_solute = 10 # m2 s-1
+    struct_element = np.array(np.ones((8,8)), dtype=bool) # for dilation
+
+    # Aitken method
+    # the time stepping and duration of one PF simualtion
+    # level 0
+    dt_PF_0 = 0.02 # time step
+    # level 1
+    dt_PF_1 = dt_PF_0/2
+    m_ed_contact_1 = 0.5
+    # level 2
+    dt_PF_2 = dt_PF_1/2
+    m_ed_contact_2 = 1
+    # n_t_PF*dt_PF gives the total time duration
+    n_t_PF = 3 # number of iterations
+
+    # Contact box detection
+    eta_contact_box_detection = 0.25 # value of the phase field searched to determine the contact box
+
+    # Figure (plot all or current)
+    # The detection of the contact by a box
+    print_all_contact_detection = True # else only the current one is printed
 
     #---------------------------------------------------------------------#
     # trackers
@@ -107,6 +138,7 @@ def get_parameters():
     L_contact_area = []
     L_contact_volume_yade = []
     L_contact_volume_moose = []
+    L_contact_volume_box = []
     L_t_pf_to_dem_1 = []
     L_t_pf_to_dem_2 = []
     L_t_dem = []
@@ -118,8 +150,16 @@ def get_parameters():
     L_n_v_1_target = []
     L_n_v_2_target = []
     L_m_ed = []
+    L_m_ed_contact = []
+    L_m_ed_large_contact = []
+    L_m_ed_plus_contact = []
+    L_m_ed_minus_contact = []
+    L_m_ed_plus_large_contact = []
+    L_m_ed_minus_large_contact = []
     L_ed_contact_point = []
     L_vertices_1_init = None
+    L_force_applied = []
+    L_dt_PF = []
 
     #---------------------------------------------------------------------#
     # dictionnary
@@ -129,12 +169,19 @@ def get_parameters():
     'n_proc': n_proc,
     'j_total': j_total,
     'save_simulation': save_simulation,
+    'n_max_vtk_files': n_max_vtk_files,
+    'print_all_map_config': print_all_map_config,
     'n_ite_max': n_ite_max,
     'n_steady_state_detection': n_steady_state_detection,
     'steady_state_detection': steady_state_detection,
     'force_applied': force_applied,
+    'force_applied_target': force_applied,
+    'control_force': control_force,
     'E': E,
     'Poisson': Poisson,
+    'print_all_contact_dem': print_all_contact_dem,
+    'print_all_shape_evolution': print_all_shape_evolution,
+    'Shape': Shape,
     'radius': radius,
     'n_phi': n_phi,
     'x_min': x_min,
@@ -149,13 +196,19 @@ def get_parameters():
     'n_int': n_int,
     'w_int': w,
     'Energy_barrier': Energy_barrier,
-    'dt_PF': dt_PF,
+    'dt_PF_0': dt_PF_0,
+    'dt_PF_1': dt_PF_1,
+    'Aitken_1': m_ed_contact_1,
+    'dt_PF_2': dt_PF_2,
+    'Aitken_2': m_ed_contact_2,
     'n_t_PF': n_t_PF,
     'k_diss': k_diss,
     'k_prec': k_prec,
     'C_eq': C_eq,
     'D_solute': D_solute,
     'struct_element': struct_element,
+    'eta_contact_box_detection': eta_contact_box_detection,
+    'print_all_contact_detection': print_all_contact_detection,
     'L_displacement': L_displacement,
     'L_sum_eta_1': L_sum_eta_1,
     'L_sum_eta_2': L_sum_eta_2,
@@ -171,6 +224,7 @@ def get_parameters():
     'L_contact_area': L_contact_area,
     'L_contact_volume_yade': L_contact_volume_yade,
     'L_contact_volume_moose': L_contact_volume_moose,
+    'L_contact_volume_box': L_contact_volume_box,
     'L_t_pf_to_dem_1': L_t_pf_to_dem_1,
     'L_t_pf_to_dem_2': L_t_pf_to_dem_2,
     'L_t_dem': L_t_dem,
@@ -182,8 +236,16 @@ def get_parameters():
     'L_n_v_1_target': L_n_v_1_target,
     'L_n_v_2_target': L_n_v_2_target,
     'L_m_ed': L_m_ed,
+    'L_m_ed_contact': L_m_ed_contact,
+    'L_m_ed_large_contact': L_m_ed_large_contact,
+    'L_m_ed_plus_contact': L_m_ed_plus_contact,
+    'L_m_ed_minus_contact': L_m_ed_minus_contact,
+    'L_m_ed_plus_large_contact': L_m_ed_plus_large_contact,
+    'L_m_ed_minus_large_contact': L_m_ed_minus_large_contact,
     'L_ed_contact_point': L_ed_contact_point,
-    'L_vertices_1_init': L_vertices_1_init
+    'L_vertices_1_init': L_vertices_1_init,
+    'L_force_applied': L_force_applied,
+    'L_dt_PF': L_dt_PF
     }
 
     return dict_user

@@ -23,18 +23,32 @@ def run_moose(dict_user, dict_sample):
     # from dem to pf
     tic_dem_to_pf = time.perf_counter() # compute dem_to_pf performances
     move_phasefield(dict_user, dict_sample) # in dem_to_pf.py
+    compute_contact_volume(dict_user, dict_sample) # in dem_to_pf.py
+    
+    # Control and adapt the force applied in DEM
+    # YADE assumes only convex shapes. If particle is concave, it creates false volume
+    # the control of the force is here to compensate this phenomena 
+    if dict_user['control_force']:
+        control_force(dict_user, dict_sample) # in pf_to_dem.py
+        # here it is done only one times
+        # can be done several times per PFDEM iteration to be sure the contact is well applied
+
+    # plot contact characterization
+    plot_contact_v_s_d(dict_user, dict_sample) # in tools.py
+
+    # from dem to pf
     compute_kc(dict_user, dict_sample) # in dem_to_pf.py
     compute_as(dict_user, dict_sample) # in dem_to_pf.py
+
+    # compute ed (for trackers and Aitken method)
+    compute_ed(dict_user, dict_sample) # in dem_to_pf.py
+    compute_dt_PF_Aitken(dict_user, dict_sample) # in dem_to_pf.py
+
+    # generate .i file
     write_i(dict_user, dict_sample) # in dem_to_pf.py
     tac_dem_to_pf = time.perf_counter() # compute dem_to_pf performances
     dict_user['L_t_dem_to_pf'].append(tac_dem_to_pf-tic_dem_to_pf)
-
-    # compute ed (for trackers)
-    compute_ed(dict_user, dict_sample) # in dem_to_pf.py
-
-    # compare contact volume in Moose and in Yade
-    compare_volumes(dict_user, dict_sample) # in dem_to_pf.py
-
+    
     # pf
     print('Running PF')
     tic_pf = time.perf_counter() # compute pf performances
@@ -64,35 +78,7 @@ def run_yade(dict_user, dict_sample):
     dict_user['L_t_pf_to_dem_1'].append(tac_pf_to_dem-tic_pf_to_dem)
 
     # shape evolution
-    with open('data/planes.data', 'rb') as handle:
-        dict_save = pickle.load(handle)
-    # save initial shapes
-    if dict_user['L_vertices_1_init'] == None:
-        dict_user['L_vertices_1_init'] = dict_save['L_vertices_1']
-        dict_user['L_vertices_2_init'] = dict_save['L_vertices_2']
-    #compare current shape and initial one
-    else :
-        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(16,9))
-        # g1
-        L_x, L_y = tuplet_to_list(dict_user['L_vertices_1_init']) # from tools.py
-        ax1.plot(L_x, L_y, label='Initial')
-        L_x, L_y = tuplet_to_list(dict_save['L_vertices_1']) # from tools.py
-        ax1.plot(L_x, L_y, label='Current')
-        ax1.legend()
-        ax1.axis('equal')
-        ax1.set_title(r'G1',fontsize=20)
-        # g2
-        L_x, L_y = tuplet_to_list(dict_user['L_vertices_2_init']) # from tools.py
-        ax2.plot(L_x, L_y, label='Initial')
-        L_x, L_y = tuplet_to_list(dict_save['L_vertices_2']) # from tools.py
-        ax2.plot(L_x, L_y, label='Current')
-        ax2.legend()
-        ax2.axis('equal')
-        ax2.set_title(r'G2',fontsize=20)
-        # close
-        plt.suptitle('Shapes evolution', fontsize=20)
-        fig.savefig('plot/shape_evolution.png')
-        plt.close(fig)
+    plot_shape_evolution(dict_user, dict_sample) # from tools.py
 
     # transmit data
     dict_save = {
@@ -103,7 +89,9 @@ def run_yade(dict_user, dict_sample):
     'pos_2': dict_sample['pos_2'],
     'n_ite_max': dict_user['n_ite_max'],
     'steady_state_detection': dict_user['steady_state_detection'],
-    'n_steady_state_detection': dict_user['n_steady_state_detection']
+    'n_steady_state_detection': dict_user['n_steady_state_detection'],
+    'print_all_contact_dem': dict_user['print_all_contact_dem'],
+    'i_DEMPF_ite': dict_sample['i_DEMPF_ite']
     }
     with open('data/main_to_dem.data', 'wb') as handle:
         pickle.dump(dict_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -124,66 +112,41 @@ def run_yade(dict_user, dict_sample):
     dict_sample['pos_1'] = dict_save['pos_1']
     dict_sample['pos_2'] = dict_save['pos_2']
 
-    # tracker
-    dict_user['L_distance_extrema'].append(dict_save['distance_extrema'])
-    dict_user['L_equivalent_area'].append(dict_save['equivalent_area'])
-    dict_user['L_contact_overlap'].append(dict_save['contact_overlap'])
-    dict_user['L_contact_area'].append(dict_save['contact_area'])
-    dict_user['L_contact_volume_yade'].append(dict_save['contact_volume'])
-
-    # plot
-    fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(16,9))
-    # overlap
-    ax1.plot(dict_user['L_distance_extrema'], label='Distance vertices')
-    ax1.set_title(r'Distance between extrema ($m$)',fontsize=20)
-    # surface
-    ax2.plot(dict_user['L_equivalent_area'])
-    ax2.set_title(r'Equivalent surface ($m^2$)',fontsize=20)
-    # volume
-    ax3.plot(dict_user['L_contact_volume_yade'])
-    ax3.set_title(r'Volume ($m^3$)',fontsize=20)
-    # close
-    plt.suptitle('Contact', fontsize=20)
-    fig.savefig('plot/contact_v_s_d.png')
-    plt.close(fig)
-
-    # tracker
-    dict_user['L_n_v_1'].append(dict_save['n_v_1']/2)
-    dict_user['L_n_v_2'].append(dict_save['n_v_2']/2)
-    dict_user['L_n_v_1_target'].append(dict_save['n_v_1_target']/2)
-    dict_user['L_n_v_2_target'].append(dict_save['n_v_2_target']/2)
-
-    # plot
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    ax1.plot(dict_user['L_n_v_1'], label='N vertices g1', color='r')
-    ax1.plot(dict_user['L_n_v_1_target'], label='N vertices g1 targetted', color='r', linestyle='dotted')
-    ax1.plot(dict_user['L_n_v_2'], label='N vertices g2', color='b')
-    ax1.plot(dict_user['L_n_v_2_target'], label='N vertices g2 targetted', color='b', linestyle='dotted')
-    ax1.legend()
-    fig.savefig('plot/n_vertices.png')
-    plt.close(fig)
+    # plot evolution of the number of vertices used in Yade
+    plot_n_vertices(dict_user, dict_sample) # from tools.py
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 # Plan
-
-# folders
-create_folder('vtk') # from tools.py
-create_folder('plot') # from tools.py
-create_folder('data') # from tools.py
-create_folder('input') # from tools.py
-create_folder('dict') # from tools.py
-
+    
 # get parameters
 dict_user = get_parameters() # from Parameters.py
 dict_sample = {}
 
+# folders
+create_folder('vtk') # from tools.py
+create_folder('plot') # from tools.py
+if dict_user['print_all_contact_dem']:
+    create_folder('plot/contact_dem') # from tools.py
+if dict_user['print_all_shape_evolution']:
+    create_folder('plot/shape_evolution') # from tools.py
+if dict_user['print_all_contact_detection']:
+    create_folder('plot/contact_detection') # from tools.py
+if dict_user['print_all_map_config']:
+    create_folder('plot/map_etas_solute') # from tools.py
+create_folder('data') # from tools.py
+create_folder('input') # from tools.py
+create_folder('dict') # from tools.py
+
 # if saved check the folder does not exist
 if dict_user['save_simulation']:
     # name template id k_diss_k_prec_D_solute_force_applied
-    name = str(int(dict_user['k_diss']))+'_'+str(int(dict_user['k_prec']))+'_'+str(int(dict_user['D_solute']))+'_'+str(int(dict_user['force_applied']))
+    name = str(int(dict_user['k_diss']))+'_'+str(int(dict_user['k_prec']))+'_'+str(int(10*dict_user['D_solute']))+'_'+str(int(dict_user['force_applied']))
     # check
     if Path('../Data_PressureSolution_2G_2D/'+name).exists():
         raise ValueError('Simulation folder exists: please change parameters')
+
+# check if the mesh map is inside the database
+check_mesh_database(dict_user, dict_sample) # from tools.py
 
 # compute performances
 tic = time.perf_counter()
@@ -191,7 +154,12 @@ tic = time.perf_counter()
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 # Create initial condition
 
-create_2_spheres(dict_user, dict_sample) # from ic.py
+if dict_user['Shape'] == 'Sphere':
+    create_2_spheres(dict_user, dict_sample) # from ic.py
+elif dict_user['Shape'] == 'Hex':
+    create_2_hexagons(dict_user, dict_sample) # from ic.py
+elif dict_user['Shape'] == 'Proxy_Hex':
+    create_2_proxy_hexagons(dict_user, dict_sample) # from ic.py
 create_solute(dict_user, dict_sample) # from ic.py
 
 # compute tracker
@@ -225,7 +193,6 @@ plt.close(fig)
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 # PFDEM iteration
 
-dict_sample['Map_known'] = False
 dict_sample['i_DEMPF_ite'] = 0
 while dict_sample['i_DEMPF_ite'] < dict_user['n_DEMPF_ite']:
     dict_sample['i_DEMPF_ite'] = dict_sample['i_DEMPF_ite'] + 1
@@ -237,102 +204,17 @@ while dict_sample['i_DEMPF_ite'] < dict_user['n_DEMPF_ite']:
     # DEM->PF, PF, PF->DEM
     run_moose(dict_user, dict_sample)
 
-    # compute tracker
-    dict_user['L_sum_eta_1'].append(np.sum(dict_sample['eta_1_map']))
-    dict_user['L_sum_eta_2'].append(np.sum(dict_sample['eta_2_map']))
-    dict_user['L_sum_c'].append(np.sum(dict_sample['c_map']))
-    dict_user['L_sum_mass'].append(np.sum(dict_sample['eta_1_map'])+np.sum(dict_sample['eta_2_map'])+np.sum(dict_sample['c_map']))
-    dict_user['L_m_eta_1'].append(np.mean(dict_sample['eta_1_map']))
-    dict_user['L_m_eta_2'].append(np.mean(dict_sample['eta_2_map']))
-    dict_user['L_m_c'].append(np.mean(dict_sample['c_map']))
-    dict_user['L_m_mass'].append(np.mean(dict_sample['eta_1_map'])+np.mean(dict_sample['eta_2_map'])+np.mean(dict_sample['c_map']))
-
-    # plot sum eta_i, c
-    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2,figsize=(16,9))
-    ax1.plot(dict_user['L_sum_eta_1'])
-    ax1.set_title(r'$\Sigma\eta_1$')
-    ax2.plot(dict_user['L_sum_eta_2'])
-    ax2.set_title(r'$\Sigma\eta_2$')
-    ax3.plot(dict_user['L_sum_c'])
-    ax3.set_title(r'$\Sigma C$')
-    ax4.plot(dict_user['L_sum_mass'])
-    ax4.set_title(r'$\Sigma\eta_1 + \Sigma\eta_2 + \Sigma c$')
-    fig.savefig('plot/sum_etai_c.png')
-    plt.close(fig)
-
-    # plot mean eta_i, c
-    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2,figsize=(16,9))
-    ax1.plot(dict_user['L_m_eta_1'])
-    ax1.set_title(r'Mean $\eta_1$')
-    ax2.plot(dict_user['L_m_eta_2'])
-    ax2.set_title(r'Mean $\eta_2$')
-    ax3.plot(dict_user['L_m_c'])
-    ax3.set_title(r'Mean $c$')
-    ax4.plot(dict_user['L_m_mass'])
-    ax4.set_title(r'Mean $\eta_1$ + Mean $\eta_2$ + Mean $c$')
-    fig.savefig('plot/mean_etai_c.png')
-    plt.close(fig)
+    # Evolution of sum and mean of etai + c
+    plot_sum_mean_etai_c(dict_user, dict_sample) # from tools.py
 
     # plot performances
-    fig, (ax1) = plt.subplots(nrows=1,ncols=1,figsize=(16,9))
-    ax1.plot(dict_user['L_t_dem'], label='DEM')
-    ax1.plot(dict_user['L_t_pf'], label='PF')
-    ax1.plot(dict_user['L_t_dem_to_pf'], label='DEM to PF')
-    ax1.plot(dict_user['L_t_pf_to_dem_1'], label='PF to DEM 1')
-    ax1.plot(dict_user['L_t_pf_to_dem_2'], label='PF to DEM 2')
-    ax1.legend()
-    ax1.set_title('Performances (s)')
-    ax1.set_xlabel('Iterations (-)')
-    fig.savefig('plot/performances.png')
-    plt.close(fig)
+    plot_performances(dict_user, dict_sample) # from tools.py
 
-    # pp displacement
-    L_disp_init = [0]
-    L_disp = [0]
-    L_strain = [0]
-    for i_disp in range(len(dict_user['L_displacement'])):
-        L_disp_init.append(L_disp_init[-1]+dict_user['L_displacement'][i_disp])
-        if i_disp >= 1:
-            L_disp.append(L_disp[-1]+dict_user['L_displacement'][i_disp])
-            L_strain.append(L_strain[-1]+dict_user['L_displacement'][i_disp]/(4*dict_user['radius']))
-    # compute andrade
-    L_andrade = []
-    L_strain_log = []
-    L_t_log = []
-    mean_log_k = 0
-    if len(L_strain) > 1:
-        for i in range(1,len(L_strain)):
-            L_strain_log.append(math.log(abs(L_strain[i])))
-            L_t_log.append(math.log(i+1))
-            mean_log_k = mean_log_k + (L_strain_log[-1] - 1/3*L_t_log[-1])
-        mean_log_k = mean_log_k/len(L_strain) # mean k in Andrade creep law
-        # compute fitted Andrade creep law
-        for i in range(len(L_t_log)):
-            L_andrade.append(mean_log_k + 1/3*L_t_log[i])
-    # plot
-    fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(16,9))
-    # displacement
-    ax1.plot(L_disp)
-    ax1.set_title('Displacement (m)')
-    # strain
-    ax2.plot(L_strain)
-    ax2.set_title(r'$\epsilon_y$ (-)')
-    ax2.set_xlabel('Times (-)')
-    # Andrade
-    ax3.plot(L_t_log, L_strain_log)
-    ax3.plot(L_t_log, L_andrade, color='k', linestyle='dotted')
-    ax3.set_title('Andrade creep law')
-    ax3.set_ylabel(r'log(|$\epsilon_y$|) (-)')
-    ax3.set_xlabel('log(Times) (-)')
-    # close
-    fig.savefig('plot/disp_strain_andrade.png')
-    plt.close(fig)
-    # save
-    dict_user['L_disp'] = L_disp
-    dict_user['L_disp_init'] = L_disp_init
-    dict_user['L_strain'] = L_strain
-    dict_user['L_andrade'] = L_andrade
-    dict_user['mean_log_k'] = mean_log_k
+    # plot displacement, strain, fit with Andrade law
+    plot_disp_strain_andrade(dict_user, dict_sample) # from tools.py
+
+    # plot maps configuration
+    plot_maps_configuration(dict_user, dict_sample) # from tools.py
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 # close simulation
@@ -349,8 +231,13 @@ hours = (tac-tic)//(60*60)
 minutes = (tac-tic - hours*60*60)//(60)
 seconds = int(tac-tic - hours*60*60 - minutes*60)
 print("\nSimulation time : "+str(hours)+" hours "+str(minutes)+" minutes "+str(seconds)+" seconds")
-
 print('Simulation ends')
+
+# save mesh database 
+save_mesh_database(dict_user, dict_sample) # from tools.py
+
+# sort files
+reduce_n_vtk_files(dict_user, dict_sample) # from tools.py
 
 # copy and paste to Data folder
 if dict_user['save_simulation']:
@@ -365,4 +252,5 @@ if dict_user['save_simulation']:
     shutil.copy('Parameters.py', '../Data_PressureSolution_2G_2D/'+name+'/Parameters.py')
     shutil.copy('pf_base.i', '../Data_PressureSolution_2G_2D/'+name+'/pf_base.i')
     shutil.copy('pf_to_dem.py', '../Data_PressureSolution_2G_2D/'+name+'/pf_to_dem.py')
-    shutil.copy('tools.i', '../Data_PressureSolution_2G_2D/'+name+'/tools.i')
+    shutil.copy('tools.py', '../Data_PressureSolution_2G_2D/'+name+'/tools.py')
+

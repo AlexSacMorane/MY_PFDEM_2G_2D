@@ -158,8 +158,8 @@
     type = DerivativeParsedMaterial
     block = 0
     property_name = F_total
-    coupled_variables = 'eta1 eta2'
-    material_property_names = 'F(eta1,eta2) Ed(eta1,eta2)'
+    coupled_variables = 'eta1 eta2 c'
+    material_property_names = 'F(eta1,eta2) Ed(eta1,eta2,c)'
     expression = 'F+Ed'
     enable_jit = true
     derivative_order = 2
