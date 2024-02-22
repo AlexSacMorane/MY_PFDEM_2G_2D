@@ -180,7 +180,8 @@ def read_vtk(dict_user, dict_sample, j_str):
         ax1.set_xlabel('X (m)')
         ax1.set_ylabel('Y (m)')
         ax1.set_title('Processor i has the priority on i+1',fontsize = title_fontsize)
-        fig.suptitle('Processors ditribution',fontsize = 1.2*title_fontsize)
+        fig.suptitle('Processors ditribution',fontsize = 1.2*title_fontsize)    
+        fig.tight_layout()
         fig.savefig('plot/processors_distribution.png')
         plt.close(fig)
         # the map is known
@@ -323,6 +324,7 @@ def control_force(dict_user, dict_sample):
     fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
     ax1.plot(dict_user['L_force_applied'])
     plt.suptitle('Force applied in Yade (DEM)', fontsize=20)
+    fig.tight_layout()
     fig.savefig('plot/force_applied.png')
     plt.close(fig)
 

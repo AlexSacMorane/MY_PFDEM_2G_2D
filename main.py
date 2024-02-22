@@ -187,6 +187,7 @@ im = ax3.imshow(dict_sample['c_map'], interpolation = 'nearest', extent=(dict_sa
 fig.colorbar(im, ax=ax3)
 ax3.set_title(r'Map of solute',fontsize = 30)
 # close
+fig.tight_layout()
 fig.savefig('plot/IC_map_etas_solute.png')
 plt.close(fig)
 

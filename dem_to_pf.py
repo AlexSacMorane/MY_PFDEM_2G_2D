@@ -64,7 +64,7 @@ def move_phasefield(dict_user, dict_sample):
             eta_2_map_new = eta_2_map
 
     # The solute map is updated
-    # the solute is push out of the grain
+    # the solute is push out/in of the grain
     # this is done in compute_kc() from dem_to_pf.py called later
 
     # update variables
@@ -95,6 +95,7 @@ def compute_as(dict_user, dict_sample):
     # overlap
     ax1.plot(dict_user['L_P_applied'])
     ax1.set_title('Pressure at the contact (Pa)',fontsize=20)
+    fig.tight_layout()
     fig.savefig('plot/contact_pressure.png')
     plt.close(fig)
 
@@ -195,6 +196,7 @@ def compute_ed(dict_user, dict_sample):
     fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
     ax1.plot(dict_user['L_m_ed'])
     ax1.set_title('Mean tilting factor (-)',fontsize=20)
+    fig.tight_layout()
     fig.savefig('plot/m_ed.png')
     plt.close(fig)
 
@@ -214,7 +216,8 @@ def compute_ed(dict_user, dict_sample):
     ax2.set_title('Mean of + and - (-)')
     # close
     plt.suptitle('Mean tilting factor in contact (-)',fontsize=20)
-    fig.savefig('plot/m_ed_contact.png')
+    fig.tight_layout()
+    fig.savefig('plot/contact_distrib_m_ed.png')
     plt.close(fig)
 
     # find nearest node to contact point
@@ -231,7 +234,8 @@ def compute_ed(dict_user, dict_sample):
     fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
     ax1.plot(dict_user['L_ed_contact_point'])
     ax1.set_title('Tilting factor at contact point (-)',fontsize=20)
-    fig.savefig('plot/contact_ed.png')
+    fig.tight_layout()
+    fig.savefig('plot/contact_point_ed.png')
     plt.close(fig)
 
 # -----------------------------------------------------------------------------#
@@ -270,7 +274,7 @@ def compute_dt_PF_Aitken(dict_user, dict_sample):
     dict_user['L_dt_PF'].append(dict_user['dt_PF'])
     fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
     ax1.plot(dict_user['L_dt_PF'])
-    ax1.set_yticklabels([dict_user['dt_PF_0'], dict_user['dt_PF_1'], dict_user['dt_PF_2']])
+    ax1.set_yticks([dict_user['dt_PF_0'], dict_user['dt_PF_1'], dict_user['dt_PF_2']])
     ax1.set_yticklabels(['Level 0', 'Level 1', 'Level 2'])
     ax1.set_title('Time step used for PF (s)',fontsize=20)
     fig.tight_layout()
@@ -808,6 +812,7 @@ def compare_volumes(dict_user, dict_sample):
     ax1.plot(dict_user['L_contact_volume_moose'], label='Moose')
     ax1.legend()
     ax1.set_title(r'Contact volume ($m^3$)',fontsize = 30)
+    fig.tight_layout()
     fig.savefig('plot/contact_volumes.png')
     plt.close(fig)
 
@@ -819,6 +824,7 @@ def compare_volumes(dict_user, dict_sample):
     fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
     ax1.plot(L_nb_mesh_contact)
     ax1.set_title(r'Number of node in contact volume (-)',fontsize = 30)
+    fig.tight_layout()
     fig.savefig('plot/contact_nb_node.png')
     plt.close(fig)
 
@@ -883,6 +889,7 @@ def compute_contact_volume(dict_user, dict_sample):
     ax1.legend()
     ax1.axis('equal')
     plt.suptitle('Contact Detection', fontsize=20)
+    fig.tight_layout()
     if dict_user['print_all_contact_detection']:
         fig.savefig('plot/contact_detection/'+str(dict_sample['i_DEMPF_ite'])+'.png')
     else:

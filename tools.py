@@ -277,7 +277,7 @@ def plot_contact_v_s_d(dict_user, dict_sample):
     ax3.set_title(r'Volume ($m^3$)',fontsize=20)
     # close
     plt.suptitle('Contact', fontsize=20)
-    fig.savefig('plot/contact_v_s_d.png')
+    fig.savefig('plot/contact_h_s_v.png')
     plt.close(fig)            
 
 #------------------------------------------------------------------------------------------------------------------------------------------ #
@@ -313,6 +313,7 @@ def plot_shape_evolution(dict_user, dict_sample):
         ax2.set_title(r'G2',fontsize=20)
         # close
         plt.suptitle('Shapes evolution', fontsize=20)
+        fig.tight_layout()
         if dict_user['print_all_shape_evolution']:
             fig.savefig('plot/shape_evolution/'+str(dict_sample['i_DEMPF_ite'])+'.png')
         else:
@@ -341,6 +342,7 @@ def plot_n_vertices(dict_user, dict_sample):
     ax1.plot(dict_user['L_n_v_2'], label='N vertices g2', color='b')
     ax1.plot(dict_user['L_n_v_2_target'], label='N vertices g2 targetted', color='b', linestyle='dotted')
     ax1.legend()
+    fig.tight_layout()
     fig.savefig('plot/n_vertices.png')
     plt.close(fig)
 
@@ -370,6 +372,7 @@ def plot_sum_mean_etai_c(dict_user, dict_sample):
     ax3.set_title(r'$\Sigma C$')
     ax4.plot(dict_user['L_sum_mass'])
     ax4.set_title(r'$\Sigma\eta_1 + \Sigma\eta_2 + \Sigma c$')
+    fig.tight_layout()
     fig.savefig('plot/sum_etai_c.png')
     plt.close(fig)
 
@@ -383,6 +386,7 @@ def plot_sum_mean_etai_c(dict_user, dict_sample):
     ax3.set_title(r'Mean $c$')
     ax4.plot(dict_user['L_m_mass'])
     ax4.set_title(r'Mean $\eta_1$ + Mean $\eta_2$ + Mean $c$')
+    fig.tight_layout()
     fig.savefig('plot/mean_etai_c.png')
     plt.close(fig)
 
@@ -401,6 +405,7 @@ def plot_performances(dict_user, dict_sample):
     ax1.legend()
     ax1.set_title('Performances (s)')
     ax1.set_xlabel('Iterations (-)')
+    fig.tight_layout()
     fig.savefig('plot/performances.png')
     plt.close(fig)
 
@@ -449,6 +454,7 @@ def plot_disp_strain_andrade(dict_user, dict_sample):
     ax3.set_ylabel(r'log(|$\epsilon_y$|) (-)')
     ax3.set_xlabel('log(Times) (-)')
     # close
+    fig.tight_layout()
     fig.savefig('plot/disp_strain_andrade.png')
     plt.close(fig)
     # save
@@ -479,6 +485,7 @@ def plot_maps_configuration(dict_user, dict_sample):
     fig.colorbar(im, ax=ax3)
     ax3.set_title(r'Map of solute',fontsize = 30)
     # close
+    fig.tight_layout()
     if dict_user['print_all_map_config']:
         fig.savefig('plot/map_etas_solute/'+str(dict_sample['i_DEMPF_ite'])+'.png')
     else:

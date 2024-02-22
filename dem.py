@@ -103,7 +103,7 @@ def compute_dt():
     '''
     Compute the time step used in the DEM step.
     '''
-    O.dt = 0.02 * polyhedra_utils.PWaveTimeStep()
+    O.dt = 0.1 * polyhedra_utils.PWaveTimeStep()
 
 # -----------------------------------------------------------------------------#
 

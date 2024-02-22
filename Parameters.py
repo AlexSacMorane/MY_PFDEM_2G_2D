@@ -16,7 +16,7 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 100 # number of PFDEM iterations
+    n_DEMPF_ite = 50 # number of PFDEM iterations
     n_proc = 6 # number of processors used
     j_total = 0 # index global of results
     save_simulation = False # indicate if the simulation is saved
@@ -30,19 +30,19 @@ def get_parameters():
     # DEM (Yade)
 
     # steady state detection
-    n_ite_max = 2000 # maximum number of iteration during a DEM step
+    n_ite_max = 5000 # maximum number of iteration during a DEM step
     n_steady_state_detection = 100 # number of iterations considered in the window
     # the difference between max and min < tolerance * force_applied
     steady_state_detection = 0.02
     # + the force applied must be contained in this window
 
     # sollicitation
-    force_applied = 3e7 # N
+    force_applied = 3e6 # N
     control_force = True # Boolean to determine if the force is controled with the contact volume
 
     # DEM material parameters
     # Young modulus
-    E = 1e9 # Pa
+    E = 1e8 # Pa
     # Poisson ratio
     Poisson = 0.3
 
@@ -103,13 +103,13 @@ def get_parameters():
     # Aitken method
     # the time stepping and duration of one PF simualtion
     # level 0
-    dt_PF_0 = 0.02 # time step
+    dt_PF_0 = 0.2 # time step
     # level 1
     dt_PF_1 = dt_PF_0/2
-    m_ed_contact_1 = 0.5
+    m_ed_contact_1 = 0.1
     # level 2
     dt_PF_2 = dt_PF_1/2
-    m_ed_contact_2 = 1
+    m_ed_contact_2 = 0.2
     # n_t_PF*dt_PF gives the total time duration
     n_t_PF = 3 # number of iterations
 
