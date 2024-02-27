@@ -74,6 +74,7 @@ def get_parameters():
     y_min = -2.3*radius
     y_max =  2.3*radius
     n_mesh_y = 400
+    m_size_mesh = (x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1)
 
     # PF material parameters
     # the energy barrier
@@ -81,7 +82,7 @@ def get_parameters():
     # number of mesh in the interface
     n_int = 6
     # the interface thickness
-    w = ((x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1))*n_int
+    w = m_size_mesh*n_int
     # the gradient coefficient
     kappa_eta = Energy_barrier*w*w/9.86
     # the mobility
@@ -98,7 +99,8 @@ def get_parameters():
 
     # diffusion of the solute
     D_solute = 10 # m2 s-1
-    struct_element = np.array(np.ones((8,8)), dtype=bool) # for dilation
+    n_struct_element = int(round(radius*0.20/m_size_mesh,0))
+    struct_element = np.array(np.ones((n_struct_element,n_struct_element)), dtype=bool) # for dilation
 
     # Aitken method
     # the time stepping and duration of one PF simualtion
