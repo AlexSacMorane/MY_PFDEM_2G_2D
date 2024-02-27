@@ -22,32 +22,59 @@ def run_moose(dict_user, dict_sample):
     '''
     # from dem to pf
     tic_dem_to_pf = time.perf_counter() # compute dem_to_pf performances
+    tic_tempo = time.perf_counter() # compute performances
     move_phasefield(dict_user, dict_sample) # in dem_to_pf.py
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['move_pf'] = dict_user['move_pf'] + tac_tempo-tic_tempo 
+    tic_tempo = time.perf_counter() # compute performances
     compute_contact_volume(dict_user, dict_sample) # in dem_to_pf.py
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['comp_con_vol'] = dict_user['comp_con_vol'] + tac_tempo-tic_tempo 
     
     # Control and adapt the force applied in DEM
     # YADE assumes only convex shapes. If particle is concave, it creates false volume
     # the control of the force is here to compensate this phenomena 
     if dict_user['control_force']:
+        tic_tempo = time.perf_counter() # compute performances
         control_force(dict_user, dict_sample) # in pf_to_dem.py
+        tac_tempo = time.perf_counter() # compute performances
+        dict_user['control_f'] = dict_user['control_f'] + tac_tempo-tic_tempo 
         # here it is done only one times
         # can be done several times per PFDEM iteration to be sure the contact is well applied
 
     # plot contact characterization
+    tic_tempo = time.perf_counter() # compute performances
     plot_contact_v_s_d(dict_user, dict_sample) # in tools.py
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['plot_con_v_s_d'] = dict_user['plot_con_v_s_d'] + tac_tempo-tic_tempo 
 
     # from dem to pf
+    tic_tempo = time.perf_counter() # compute performances
     compute_kc(dict_user, dict_sample) # in dem_to_pf.py
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['comp_kc'] = dict_user['comp_kc'] + tac_tempo-tic_tempo 
+    tic_tempo = time.perf_counter() # compute performances
     compute_as(dict_user, dict_sample) # in dem_to_pf.py
-
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['comp_as'] = dict_user['comp_as'] + tac_tempo-tic_tempo 
+    
     # compute ed (for trackers and Aitken method)
+    tic_tempo = time.perf_counter() # compute performances
     compute_ed(dict_user, dict_sample) # in dem_to_pf.py
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['comp_ed'] = dict_user['comp_ed'] + tac_tempo-tic_tempo 
+    tic_tempo = time.perf_counter() # compute performances
     compute_dt_PF_Aitken(dict_user, dict_sample) # in dem_to_pf.py
-
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['comp_dt'] = dict_user['comp_dt'] + tac_tempo-tic_tempo 
+    
     # generate .i file
+    tic_tempo = time.perf_counter() # compute performances
     write_i(dict_user, dict_sample) # in dem_to_pf.py
+    tac_tempo = time.perf_counter() # compute performances
     tac_dem_to_pf = time.perf_counter() # compute dem_to_pf performances
     dict_user['L_t_dem_to_pf'].append(tac_dem_to_pf-tic_dem_to_pf)
+    dict_user['write_i'] = dict_user['write_i'] + tac_tempo-tic_tempo 
     
     # pf
     print('Running PF')
@@ -55,16 +82,22 @@ def run_moose(dict_user, dict_sample):
     os.system('mpiexec -n '+str(dict_user['n_proc'])+' ~/projects/moose/modules/phase_field/phase_field-opt -i pf.i')
     tac_pf = time.perf_counter() # compute pf performances
     dict_user['L_t_pf'].append(tac_pf-tic_pf)
-
+    dict_user['solve_pf'] = dict_user['solve_pf'] + tac_pf-tic_pf 
+    
     # from pf to dem
+    tic_tempo = time.perf_counter() # compute performances
     last_j_str = sort_files(dict_user, dict_sample) # in pf_to_dem.py
-
+    tac_dem_to_pf = time.perf_counter() # compute dem_to_pf performances
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['sort_pf'] = dict_user['sort_pf'] + tac_tempo-tic_tempo 
+    
     print('Reading data')
     tic_pf_to_dem = time.perf_counter() # compute pf_to_dem performances
     read_vtk(dict_user, dict_sample, last_j_str) # in pf_to_dem.py
     tac_pf_to_dem = time.perf_counter() # compute pf_to_dem performances
     dict_user['L_t_pf_to_dem_2'].append(tac_pf_to_dem-tic_pf_to_dem)
-
+    dict_user['read_pf'] = dict_user['sort_pf'] + tac_pf_to_dem-tic_pf_to_dem 
+    
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 
 def run_yade(dict_user, dict_sample):
@@ -76,11 +109,16 @@ def run_yade(dict_user, dict_sample):
     compute_vertices(dict_user, dict_sample) # from pf_to_dem.py
     tac_pf_to_dem = time.perf_counter() # compute pf_to_dem performances
     dict_user['L_t_pf_to_dem_1'].append(tac_pf_to_dem-tic_pf_to_dem)
-
+    dict_user['comp_vertices'] = dict_user['comp_vertices'] + tac_pf_to_dem-tic_pf_to_dem 
+    
     # shape evolution
+    tic_tempo = time.perf_counter() # compute performances
     plot_shape_evolution(dict_user, dict_sample) # from tools.py
-
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['plot_shape'] = dict_user['plot_shape'] + tac_tempo-tic_tempo 
+    
     # transmit data
+    tic_tempo = time.perf_counter() # compute performances
     dict_save = {
     'E': dict_user['E'],
     'Poisson': dict_user['Poisson'],
@@ -95,26 +133,38 @@ def run_yade(dict_user, dict_sample):
     }
     with open('data/main_to_dem.data', 'wb') as handle:
         pickle.dump(dict_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['save_dem'] = dict_user['save_dem'] + tac_tempo-tic_tempo 
+    
     # dem
     print('Running DEM')
     tic_dem = time.perf_counter() # compute dem performances
     os.system('yadedaily -j '+str(dict_user['n_proc'])+' -x -n dem_base.py')
     tac_dem = time.perf_counter() # compute dem performances
     dict_user['L_t_dem'].append(tac_dem-tic_dem)
-
+    dict_user['solve_dem'] = dict_user['solve_dem'] + tac_dem-tic_dem 
+    
     # sort files
+    tic_tempo = time.perf_counter() # compute performances
     sort_files_yade() # in dem_to_pf.py
-
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['sort_dem'] = dict_user['sort_dem'] + tac_tempo-tic_tempo 
+    
     # load data
+    tic_tempo = time.perf_counter() # compute performances
     with open('data/dem_to_main.data', 'rb') as handle:
         dict_save = pickle.load(handle)
     dict_sample['pos_1'] = dict_save['pos_1']
     dict_sample['pos_2'] = dict_save['pos_2']
-
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['read_dem'] = dict_user['read_dem'] + tac_tempo-tic_tempo 
+    
     # plot evolution of the number of vertices used in Yade
+    tic_tempo = time.perf_counter() # compute performances
     plot_n_vertices(dict_user, dict_sample) # from tools.py
-
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['plot_n_vertices'] = dict_user['plot_n_vertices'] + tac_tempo-tic_tempo 
+    
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 # Plan
     
@@ -192,6 +242,34 @@ fig.savefig('plot/IC_map_etas_solute.png')
 plt.close(fig)
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
+# Performances
+
+dict_user['move_pf'] = 0
+dict_user['comp_con_vol'] = 0
+dict_user['control_f'] = 0
+dict_user['plot_con_v_s_d'] = 0
+dict_user['comp_kc'] = 0
+dict_user['comp_as'] = 0
+dict_user['comp_ed'] = 0
+dict_user['comp_dt'] = 0
+dict_user['write_i'] = 0
+dict_user['solve_pf'] = 0
+dict_user['sort_pf'] = 0
+dict_user['read_pf'] = 0
+dict_user['comp_vertices'] = 0
+dict_user['plot_shape'] = 0
+dict_user['save_dem'] = 0
+dict_user['solve_dem'] = 0
+dict_user['sort_dem'] = 0
+dict_user['read_dem'] = 0
+dict_user['plot_n_vertices'] = 0
+dict_user['plot_s_m_etai_c'] = 0
+dict_user['plot_perf'] = 0
+dict_user['plot_d_s_a'] = 0
+dict_user['plot_map'] = 0
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------ #
 # PFDEM iteration
 
 dict_sample['i_DEMPF_ite'] = 0
@@ -206,16 +284,28 @@ while dict_sample['i_DEMPF_ite'] < dict_user['n_DEMPF_ite']:
     run_moose(dict_user, dict_sample)
 
     # Evolution of sum and mean of etai + c
+    tic_tempo = time.perf_counter() # compute performances
     plot_sum_mean_etai_c(dict_user, dict_sample) # from tools.py
-
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['plot_s_m_etai_c'] = dict_user['plot_s_m_etai_c'] + tac_tempo-tic_tempo 
+    
     # plot performances
+    tic_tempo = time.perf_counter() # compute performances
     plot_performances(dict_user, dict_sample) # from tools.py
-
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['plot_perf'] = dict_user['plot_perf'] + tac_tempo-tic_tempo 
+    
     # plot displacement, strain, fit with Andrade law
+    tic_tempo = time.perf_counter() # compute performances
     plot_disp_strain_andrade(dict_user, dict_sample) # from tools.py
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['plot_d_s_a'] = dict_user['plot_d_s_a'] + tac_tempo-tic_tempo 
 
     # plot maps configuration
+    tic_tempo = time.perf_counter() # compute performances
     plot_maps_configuration(dict_user, dict_sample) # from tools.py
+    tac_tempo = time.perf_counter() # compute performances
+    dict_user['plot_map'] = dict_user['plot_map'] + tac_tempo-tic_tempo 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 # close simulation

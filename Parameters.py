@@ -17,14 +17,14 @@ def get_parameters():
     # PFDEM
 
     n_DEMPF_ite = 50 # number of PFDEM iterations
-    n_proc = 6 # number of processors used
+    n_proc = 5 # number of processors used
     j_total = 0 # index global of results
     save_simulation = False # indicate if the simulation is saved
-    n_max_vtk_files = 50 # maximum number of vtk files (can be None to save all files)
+    n_max_vtk_files = None # maximum number of vtk files (can be None to save all files)
 
     # Figure (plot all or current)
     # The maps configuration
-    print_all_map_config = True # else only the current one is printed
+    print_all_map_config = False # else only the current one is printed
 
     #---------------------------------------------------------------------#
     # DEM (Yade)
@@ -48,7 +48,7 @@ def get_parameters():
 
     # Figure (plot all or current)
     # The evolution of the overlap durig DEM steps
-    print_all_contact_dem = True # else only the current one is printed
+    print_all_contact_dem = False # else only the current one is printed
     # The evolution of shape (compared to the initial state)
     print_all_shape_evolution = True # else only the current one is printed
 
@@ -118,7 +118,7 @@ def get_parameters():
 
     # Figure (plot all or current)
     # The detection of the contact by a box
-    print_all_contact_detection = True # else only the current one is printed
+    print_all_contact_detection = False # else only the current one is printed
 
     #---------------------------------------------------------------------#
     # trackers
