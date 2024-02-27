@@ -16,7 +16,7 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 50 # number of PFDEM iterations
+    n_DEMPF_ite = 70 # number of PFDEM iterations
     n_proc = 5 # number of processors used
     j_total = 0 # index global of results
     save_simulation = False # indicate if the simulation is saved
@@ -160,6 +160,11 @@ def get_parameters():
     L_vertices_1_init = None
     L_force_applied = []
     L_dt_PF = []
+    L_AreaSphericity = []
+    L_DiameterSphericity = []
+    L_CircleRatioSphericity = []
+    L_PerimeterSphericity = []
+    L_WidthToLengthRatioSpericity = []
 
     #---------------------------------------------------------------------#
     # dictionnary
@@ -245,7 +250,12 @@ def get_parameters():
     'L_ed_contact_point': L_ed_contact_point,
     'L_vertices_1_init': L_vertices_1_init,
     'L_force_applied': L_force_applied,
-    'L_dt_PF': L_dt_PF
+    'L_dt_PF': L_dt_PF,
+    'L_AreaSphericity': L_AreaSphericity,
+    'L_DiameterSphericity': L_DiameterSphericity,
+    'L_CircleRatioSphericity': L_CircleRatioSphericity,
+    'L_PerimeterSphericity': L_PerimeterSphericity,
+    'L_WidthToLengthRatioSpericity': L_WidthToLengthRatioSpericity
     }
 
     return dict_user

@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import vtk
 from vtk.util.numpy_support import vtk_to_numpy
 
+# own
+import tools
+
 # -----------------------------------------------------------------------------#
 
 def sort_files(dict_user, dict_sample):
@@ -210,6 +213,27 @@ def compute_vertices(dict_user, dict_sample):
     # compute vertices
     L_vertices_1 = interpolate_vertices(dict_sample['eta_1_map'], dict_sample['pos_1'], dict_user, dict_sample)
     L_vertices_2 = interpolate_vertices(dict_sample['eta_2_map'], dict_sample['pos_2'], dict_user, dict_sample)
+
+    # compute sphericities
+    AreaSphericity, DiameterSphericity, CircleRatioSphericity, PerimeterSphericity, WidthToLengthRatioSpericity = tools.compute_sphericities(L_vertices_1) # from tools.py
+    # save and plot 
+    dict_user['L_AreaSphericity'].append(AreaSphericity)
+    dict_user['L_DiameterSphericity'].append(DiameterSphericity)
+    dict_user['L_CircleRatioSphericity'].append(CircleRatioSphericity)
+    dict_user['L_PerimeterSphericity'].append(PerimeterSphericity)
+    dict_user['L_WidthToLengthRatioSpericity'].append(WidthToLengthRatioSpericity)
+
+    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+    ax1.plot(dict_user['L_AreaSphericity'], label='Area sphericity')
+    ax1.plot(dict_user['L_DiameterSphericity'], label='Diameter sphericity')
+    ax1.plot(dict_user['L_CircleRatioSphericity'], label='Circle ratio sphericity')
+    ax1.plot(dict_user['L_PerimeterSphericity'], label='Perimeter sphericity')
+    ax1.plot(dict_user['L_WidthToLengthRatioSpericity'], label='Width/Length spericity')
+    ax1.legend()
+    plt.suptitle('Grain sphericities (G1)', fontsize=20)
+    fig.tight_layout()
+    fig.savefig('plot/sphericities.png')
+    plt.close(fig)
 
     # save data
     dict_save = {

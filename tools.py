@@ -1,7 +1,7 @@
 # -*- encoding=utf-8 -*-
 
 from pathlib import Path
-import shutil, os, pickle
+import shutil, os, pickle, math
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -492,3 +492,226 @@ def plot_maps_configuration(dict_user, dict_sample):
         fig.savefig('plot/map_etas_solute.png')
     plt.close(fig)
 
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def compute_sphericities(L_vertices):
+    '''
+    Compute sphericity of the particle with five parameters.
+
+    The parameters used are the area, the diameter, the circle ratio, the perimeter and the width to length ratio sphericity.
+    See Zheng, J., Hryciw, R.D. (2015) Traditional soil particle sphericity, roundness and surface roughness by computational geometry, Geotechnique, Vol 65
+    '''
+    # adapt list
+    L_vertices_x, L_vertices_y = tuplet_to_list_no_centerized(L_vertices)
+    L_vertices = []
+    for i_v in range(len(L_vertices_x)):
+        L_vertices.append(np.array([L_vertices_x[i_v], L_vertices_y[i_v]]))
+
+    #Find the minimum circumscribing circle
+    #look for the two farthest and nearest points
+    MaxDistance = 0
+    for i_p in range(0,len(L_vertices)-2):
+        for j_p in range(i_p+1,len(L_vertices)-1):
+            Distance = np.linalg.norm(L_vertices[i_p]-L_vertices[j_p])
+            if Distance > MaxDistance :
+                ij_farthest = (i_p,j_p)
+                MaxDistance = Distance
+
+    #Trial circle
+    center_circumscribing = (L_vertices[ij_farthest[0]]+L_vertices[ij_farthest[1]])/2
+    radius_circumscribing = MaxDistance/2
+    Circumscribing_Found = True
+    Max_outside_distance = radius_circumscribing
+    for i_p in range(len(L_vertices)-1):
+        #there is a margin here because of the numerical approximation
+        if np.linalg.norm(L_vertices[i_p]-center_circumscribing) > (1+0.05)*radius_circumscribing and i_p not in ij_farthest: #vertex outside the trial circle
+            Circumscribing_Found = False
+            if np.linalg.norm(L_vertices[i_p]-center_circumscribing) > Max_outside_distance:
+                k_outside_farthest = i_p
+                Max_outside_distance = np.linalg.norm(L_vertices[i_p]-center_circumscribing)
+    #The trial guess does not work
+    if not Circumscribing_Found:
+        L_ijk_circumscribing = [ij_farthest[0],ij_farthest[1],k_outside_farthest]
+        center_circumscribing, radius_circumscribing = FindCircleFromThreePoints(L_vertices[L_ijk_circumscribing[0]],L_vertices[L_ijk_circumscribing[1]],L_vertices[L_ijk_circumscribing[2]])
+        Circumscribing_Found = True
+        for i_p in range(len(L_vertices)-1):
+            #there is 1% margin here because of the numerical approximation
+            if np.linalg.norm(L_vertices[i_p]-center_circumscribing) > (1+0.05)*radius_circumscribing and i_p not in L_ijk_circumscribing: #vertex outside the circle computed
+                Circumscribing_Found = False
+        #see article for other case
+        if not Circumscribing_Found:
+            raise ValueError('This algorithm is not developped for this case...')
+
+    #look for length and width
+    length = MaxDistance
+    u_maxDistance = (L_vertices[ij_farthest[0]]-L_vertices[ij_farthest[1]])/np.linalg.norm(L_vertices[ij_farthest[0]]-L_vertices[ij_farthest[1]])
+    v_maxDistance = np.array([u_maxDistance[1], -u_maxDistance[0]])
+    MaxWidth = 0
+    for i_p in range(0,len(L_vertices)-2):
+        for j_p in range(i_p+1,len(L_vertices)-1):
+            Distance = abs(np.dot(L_vertices[i_p]-L_vertices[j_p],v_maxDistance))
+            if Distance > MaxWidth :
+                ij_width = (i_p,j_p)
+                MaxWidth = Distance
+    width = MaxWidth
+
+    #look for maximum inscribed circle
+    #discretisation of the grain
+    l_x_inscribing = np.linspace(min(L_vertices_x),max(L_vertices_x), 100)
+    l_y_inscribing = np.linspace(min(L_vertices_y),max(L_vertices_y), 100)
+    #creation of an Euclidean distance map to the nearest boundary vertex
+    map_inscribing = np.zeros((100, 100))
+    #compute the map
+    for i_x in range(100):
+        for i_y in range(100):
+            p = np.array([l_x_inscribing[i_x], l_y_inscribing[-1-i_y]])
+            #work only if the point is inside the grain
+            if P_is_inside(L_vertices, p):
+                #look for the nearest vertex
+                MinDistance = None
+                for q in L_vertices[:-1]:
+                    Distance = np.linalg.norm(p-q)
+                    if MinDistance == None or Distance < MinDistance:
+                        MinDistance = Distance
+                map_inscribing[-1-i_y, i_x] = MinDistance
+            else :
+                map_inscribing[-1-i_y, i_x] = 0
+    #look for the peak of the map
+    index_max = np.argmax(map_inscribing)
+    l = index_max//100
+    c = index_max%100
+    radius_inscribing = map_inscribing[l, c]
+
+    #Compute surface of the grain 
+    #Sinus law
+    meanPoint = np.mean(L_vertices[:-1], axis=0)
+    SurfaceParticle = 0
+    for i_triangle in range(len(L_vertices)-1):
+        AB = np.array(L_vertices[i_triangle]-meanPoint)
+        AC = np.array(L_vertices[i_triangle+1]-meanPoint)
+        SurfaceParticle = SurfaceParticle + 0.5*np.linalg.norm(np.cross(AB, AC))
+
+    #Area Sphericity
+    SurfaceCircumscribing = math.pi*radius_circumscribing**2
+    AreaSphericity = SurfaceParticle / SurfaceCircumscribing
+
+    #Diameter Sphericity
+    DiameterSameAreaParticle = 2*math.sqrt(SurfaceParticle/math.pi)
+    DiameterCircumscribing = radius_circumscribing*2
+    DiameterSphericity = DiameterSameAreaParticle / DiameterCircumscribing
+
+    #Circle Ratio Sphericity
+    DiameterInscribing = radius_inscribing*2
+    CircleRatioSphericity = DiameterInscribing / DiameterCircumscribing
+
+    #Perimeter Sphericity
+    PerimeterSameAreaParticle = 2*math.sqrt(SurfaceParticle*math.pi)
+    PerimeterParticle = 0
+    for i in range(len(L_vertices)-1):
+        PerimeterParticle = PerimeterParticle + np.linalg.norm(L_vertices[i+1]-L_vertices[i])
+    PerimeterSphericity = PerimeterSameAreaParticle / PerimeterParticle
+
+    #Width to length ratio Spericity
+    WidthToLengthRatioSpericity = width / length
+
+    return AreaSphericity, DiameterSphericity, CircleRatioSphericity, PerimeterSphericity, WidthToLengthRatioSpericity
+
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def P_is_inside(L_vertices, P):
+    '''
+    Determine if a point P is inside of a grain
+
+    Make a slide on constant y. Every time a border is crossed, the point switches between in and out.
+    see Franklin 1994, see Alonso-Marroquin 2009
+    '''
+    counter = 0
+    for i_p_border in range(len(L_vertices)-1):
+        #consider only points if the coordinates frame the y-coordinate of the point
+        if (L_vertices[i_p_border][1]-P[1])*(L_vertices[i_p_border+1][1]-P[1]) < 0 :
+            x_border = L_vertices[i_p_border][0] + (L_vertices[i_p_border+1][0]-L_vertices[i_p_border][0])*(P[1]-L_vertices[i_p_border][1])/(L_vertices[i_p_border+1][1]-L_vertices[i_p_border][1])
+            if x_border > P[0] :
+                counter = counter + 1
+    if counter % 2 == 0:
+        return False
+    else :
+        return True
+    
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def FindCircleFromThreePoints(P1, P2, P3):
+    '''
+    Compute the circumscribing circle of a triangle defined by three points.
+
+    https://www.geeksforgeeks.org/program-find-circumcenter-triangle-2/
+    '''
+    # Line P1P2 is represented as ax + by = c and line P2P3 is represented as ex + fy = g
+    a, b, c = lineFromPoints(P1, P2)
+    e, f, g = lineFromPoints(P2, P3)
+
+    # Converting lines P1P2 and P2P3 to perpendicular bisectors.
+    #After this, L : ax + by = c and M : ex + fy = g
+    a, b, c = perpendicularBisectorFromLine(P1, P2, a, b, c)
+    e, f, g = perpendicularBisectorFromLine(P2, P3, e, f, g)
+
+    # The point of intersection of L and M gives the circumcenter
+    circumcenter = lineLineIntersection(a, b, c, e, f, g)
+
+    if np.linalg.norm(circumcenter - np.array([10**9,10**9])) == 0:
+        raise ValueError('The given points do not form a triangle and are collinear...')
+    else :
+        #compute the radius
+        radius = max([np.linalg.norm(P1-circumcenter), np.linalg.norm(P2-circumcenter), np.linalg.norm(P3-circumcenter)])
+
+    return circumcenter, radius
+
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def lineFromPoints(P, Q):
+    '''
+    Function to find the line given two points
+
+    Used in FindCircleFromThreePoints().
+    The equation is c = ax + by.
+    https://www.geeksforgeeks.org/program-find-circumcenter-triangle-2/
+    '''
+    a = Q[1] - P[1]
+    b = P[0] - Q[0]
+    c = a * (P[0]) + b * (P[1])
+    return a, b, c
+
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def lineLineIntersection(a1, b1, c1, a2, b2, c2):
+    '''
+    Returns the intersection point of two lines.
+
+    Used in FindCircleFromThreePoints().
+    https://www.geeksforgeeks.org/program-find-circumcenter-triangle-2/
+    '''
+    determinant = a1 * b2 - a2 * b1
+    if (determinant == 0):
+        # The lines are parallel.
+        return np.array([10**9,10**9])
+    else:
+        x = (b2 * c1 - b1 * c2)//determinant
+        y = (a1 * c2 - a2 * c1)//determinant
+        return np.array([x, y])
+
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def perpendicularBisectorFromLine(P, Q, a, b, c):
+    '''
+    Function which converts the input line to its perpendicular bisector.
+
+    Used in FindCircleFromThreePoints().
+    The equation is c = ax + by.
+    https://www.geeksforgeeks.org/program-find-circumcenter-triangle-2/
+    '''
+    mid_point = [(P[0] + Q[0])//2, (P[1] + Q[1])//2]
+    # c = -bx + ay
+    c = -b * (mid_point[0]) + a * (mid_point[1])
+    temp = a
+    a = -b
+    b = temp
+    return a, b, c
