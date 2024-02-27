@@ -16,11 +16,19 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 70 # number of PFDEM iterations
+    n_DEMPF_ite = 10 # number of PFDEM iterations
     n_proc = 5 # number of processors used
     j_total = 0 # index global of results
     save_simulation = False # indicate if the simulation is saved
     n_max_vtk_files = None # maximum number of vtk files (can be None to save all files)
+
+    # Select Figures to plot
+    # Available:
+    # contact_pressure, contact_distrib_m_ed, contact_point_ed, contact_volume, contact_nb_node
+    # contact_detection, contact_h_s_v, contact_dem
+    # m_ed, dt_PF, IC, processor, sphericities, force_applied, maps
+    # shape_evolution, n_vertices, sum_etai_c, mean_etai_c, performances, disp_strain_andrade
+    L_figures = ['contact_distrib_m_ed', 'contact_pressure', 'disp_strain_andrade', 'sphericities', 'shape_evolution']
 
     # Figure (plot all or current)
     # The maps configuration
@@ -50,7 +58,7 @@ def get_parameters():
     # The evolution of the overlap durig DEM steps
     print_all_contact_dem = False # else only the current one is printed
     # The evolution of shape (compared to the initial state)
-    print_all_shape_evolution = True # else only the current one is printed
+    print_all_shape_evolution = False # else only the current one is printed
 
     #---------------------------------------------------------------------#
     # Grain description
@@ -70,10 +78,10 @@ def get_parameters():
     # mesh
     x_min = -1.3*radius
     x_max =  1.3*radius
-    n_mesh_x = 200
-    y_min = -2.3*radius
-    y_max =  2.3*radius
-    n_mesh_y = 400
+    n_mesh_x = 260
+    y_min = -2.4*radius
+    y_max =  2.4*radius
+    n_mesh_y = 480
     m_size_mesh = (x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1)
 
     # PF material parameters
@@ -86,7 +94,7 @@ def get_parameters():
     # the gradient coefficient
     kappa_eta = Energy_barrier*w*w/9.86
     # the mobility
-    Mobility = 3/2.2*w
+    Mobility = 0.2
     Mobility_eff = 2.2/3*Mobility/w
 
     # kinetics of dissolution and precipitation
@@ -177,6 +185,7 @@ def get_parameters():
     'j_total': j_total,
     'save_simulation': save_simulation,
     'n_max_vtk_files': n_max_vtk_files,
+    'L_figures': L_figures,
     'print_all_map_config': print_all_map_config,
     'n_ite_max': n_ite_max,
     'n_steady_state_detection': n_steady_state_detection,

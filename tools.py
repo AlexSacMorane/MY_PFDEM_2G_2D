@@ -263,22 +263,23 @@ def plot_contact_v_s_d(dict_user, dict_sample):
     dict_user['L_contact_area'].append(dict_save['contact_area']) # computed by Yade
     dict_user['L_contact_volume_yade'].append(dict_save['contact_volume'])
     # plot
-    fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(16,9))
-    # overlap
-    ax1.plot(dict_user['L_distance_extrema'], label='Distance vertices')
-    ax1.set_title(r'Contact Box height ($m$)',fontsize=20)
-    # surface
-    ax2.plot(dict_user['L_equivalent_area'])
-    ax2.set_title(r'Contact Box width/surface ($m^2$)',fontsize=20)
-    # volume
-    ax3.plot(dict_user['L_contact_volume_yade'], label='Yade')
-    ax3.plot(dict_user['L_contact_volume_box'], label='Box')
-    ax3.legend()
-    ax3.set_title(r'Volume ($m^3$)',fontsize=20)
-    # close
-    plt.suptitle('Contact', fontsize=20)
-    fig.savefig('plot/contact_h_s_v.png')
-    plt.close(fig)            
+    if 'contact_h_s_v' in dict_user['L_figures']:
+        fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(16,9))
+        # overlap
+        ax1.plot(dict_user['L_distance_extrema'], label='Distance vertices')
+        ax1.set_title(r'Contact Box height ($m$)',fontsize=20)
+        # surface
+        ax2.plot(dict_user['L_equivalent_area'])
+        ax2.set_title(r'Contact Box width/surface ($m^2$)',fontsize=20)
+        # volume
+        ax3.plot(dict_user['L_contact_volume_yade'], label='Yade')
+        ax3.plot(dict_user['L_contact_volume_box'], label='Box')
+        ax3.legend()
+        ax3.set_title(r'Volume ($m^3$)',fontsize=20)
+        # close
+        plt.suptitle('Contact', fontsize=20)
+        fig.savefig('plot/contact_h_s_v.png')
+        plt.close(fig)            
 
 #------------------------------------------------------------------------------------------------------------------------------------------ #
 
@@ -294,31 +295,32 @@ def plot_shape_evolution(dict_user, dict_sample):
         dict_user['L_vertices_2_init'] = dict_save['L_vertices_2']
     #compare current shape and initial one
     else :
-        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(16,9))
-        # g1
-        L_x, L_y = tuplet_to_list(dict_user['L_vertices_1_init']) # from tools.py
-        ax1.plot(L_x, L_y, label='Initial')
-        L_x, L_y = tuplet_to_list(dict_save['L_vertices_1']) # from tools.py
-        ax1.plot(L_x, L_y, label='Current')
-        ax1.legend()
-        ax1.axis('equal')
-        ax1.set_title(r'G1',fontsize=20)
-        # g2
-        L_x, L_y = tuplet_to_list(dict_user['L_vertices_2_init']) # from tools.py
-        ax2.plot(L_x, L_y, label='Initial')
-        L_x, L_y = tuplet_to_list(dict_save['L_vertices_2']) # from tools.py
-        ax2.plot(L_x, L_y, label='Current')
-        ax2.legend()
-        ax2.axis('equal')
-        ax2.set_title(r'G2',fontsize=20)
-        # close
-        plt.suptitle('Shapes evolution', fontsize=20)
-        fig.tight_layout()
-        if dict_user['print_all_shape_evolution']:
-            fig.savefig('plot/shape_evolution/'+str(dict_sample['i_DEMPF_ite'])+'.png')
-        else:
-            fig.savefig('plot/shape_evolution.png')
-        plt.close(fig)
+        if 'shape_evolution' in dict_user['L_figures']:
+            fig, (ax1, ax2) = plt.subplots(1,2,figsize=(16,9))
+            # g1
+            L_x, L_y = tuplet_to_list(dict_user['L_vertices_1_init']) # from tools.py
+            ax1.plot(L_x, L_y, label='Initial')
+            L_x, L_y = tuplet_to_list(dict_save['L_vertices_1']) # from tools.py
+            ax1.plot(L_x, L_y, label='Current')
+            ax1.legend()
+            ax1.axis('equal')
+            ax1.set_title(r'G1',fontsize=20)
+            # g2
+            L_x, L_y = tuplet_to_list(dict_user['L_vertices_2_init']) # from tools.py
+            ax2.plot(L_x, L_y, label='Initial')
+            L_x, L_y = tuplet_to_list(dict_save['L_vertices_2']) # from tools.py
+            ax2.plot(L_x, L_y, label='Current')
+            ax2.legend()
+            ax2.axis('equal')
+            ax2.set_title(r'G2',fontsize=20)
+            # close
+            plt.suptitle('Shapes evolution', fontsize=20)
+            fig.tight_layout()
+            if dict_user['print_all_shape_evolution']:
+                fig.savefig('plot/shape_evolution/'+str(dict_sample['i_DEMPF_ite'])+'.png')
+            else:
+                fig.savefig('plot/shape_evolution.png')
+            plt.close(fig)
 
 #------------------------------------------------------------------------------------------------------------------------------------------ #
 
@@ -336,15 +338,16 @@ def plot_n_vertices(dict_user, dict_sample):
     dict_user['L_n_v_2_target'].append(dict_save['n_v_2_target']/2)
 
     # plot
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    ax1.plot(dict_user['L_n_v_1'], label='N vertices g1', color='r')
-    ax1.plot(dict_user['L_n_v_1_target'], label='N vertices g1 targetted', color='r', linestyle='dotted')
-    ax1.plot(dict_user['L_n_v_2'], label='N vertices g2', color='b')
-    ax1.plot(dict_user['L_n_v_2_target'], label='N vertices g2 targetted', color='b', linestyle='dotted')
-    ax1.legend()
-    fig.tight_layout()
-    fig.savefig('plot/n_vertices.png')
-    plt.close(fig)
+    if 'n_vertices' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_n_v_1'], label='N vertices g1', color='r')
+        ax1.plot(dict_user['L_n_v_1_target'], label='N vertices g1 targetted', color='r', linestyle='dotted')
+        ax1.plot(dict_user['L_n_v_2'], label='N vertices g2', color='b')
+        ax1.plot(dict_user['L_n_v_2_target'], label='N vertices g2 targetted', color='b', linestyle='dotted')
+        ax1.legend()
+        fig.tight_layout()
+        fig.savefig('plot/n_vertices.png')
+        plt.close(fig)
 
 #------------------------------------------------------------------------------------------------------------------------------------------ #
 
@@ -363,32 +366,34 @@ def plot_sum_mean_etai_c(dict_user, dict_sample):
     dict_user['L_m_mass'].append(np.mean(dict_sample['eta_1_map'])+np.mean(dict_sample['eta_2_map'])+np.mean(dict_sample['c_map']))
 
     # plot sum eta_i, c
-    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2,figsize=(16,9))
-    ax1.plot(dict_user['L_sum_eta_1'])
-    ax1.set_title(r'$\Sigma\eta_1$')
-    ax2.plot(dict_user['L_sum_eta_2'])
-    ax2.set_title(r'$\Sigma\eta_2$')
-    ax3.plot(dict_user['L_sum_c'])
-    ax3.set_title(r'$\Sigma C$')
-    ax4.plot(dict_user['L_sum_mass'])
-    ax4.set_title(r'$\Sigma\eta_1 + \Sigma\eta_2 + \Sigma c$')
-    fig.tight_layout()
-    fig.savefig('plot/sum_etai_c.png')
-    plt.close(fig)
+    if 'sum_etai_c' in dict_user['L_figures']:
+        fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2,figsize=(16,9))
+        ax1.plot(dict_user['L_sum_eta_1'])
+        ax1.set_title(r'$\Sigma\eta_1$')
+        ax2.plot(dict_user['L_sum_eta_2'])
+        ax2.set_title(r'$\Sigma\eta_2$')
+        ax3.plot(dict_user['L_sum_c'])
+        ax3.set_title(r'$\Sigma C$')
+        ax4.plot(dict_user['L_sum_mass'])
+        ax4.set_title(r'$\Sigma\eta_1 + \Sigma\eta_2 + \Sigma c$')
+        fig.tight_layout()
+        fig.savefig('plot/sum_etai_c.png')
+        plt.close(fig)
 
     # plot mean eta_i, c
-    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2,figsize=(16,9))
-    ax1.plot(dict_user['L_m_eta_1'])
-    ax1.set_title(r'Mean $\eta_1$')
-    ax2.plot(dict_user['L_m_eta_2'])
-    ax2.set_title(r'Mean $\eta_2$')
-    ax3.plot(dict_user['L_m_c'])
-    ax3.set_title(r'Mean $c$')
-    ax4.plot(dict_user['L_m_mass'])
-    ax4.set_title(r'Mean $\eta_1$ + Mean $\eta_2$ + Mean $c$')
-    fig.tight_layout()
-    fig.savefig('plot/mean_etai_c.png')
-    plt.close(fig)
+    if 'mean_etai_c' in dict_user['L_figures']:
+        fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2,figsize=(16,9))
+        ax1.plot(dict_user['L_m_eta_1'])
+        ax1.set_title(r'Mean $\eta_1$')
+        ax2.plot(dict_user['L_m_eta_2'])
+        ax2.set_title(r'Mean $\eta_2$')
+        ax3.plot(dict_user['L_m_c'])
+        ax3.set_title(r'Mean $c$')
+        ax4.plot(dict_user['L_m_mass'])
+        ax4.set_title(r'Mean $\eta_1$ + Mean $\eta_2$ + Mean $c$')
+        fig.tight_layout()
+        fig.savefig('plot/mean_etai_c.png')
+        plt.close(fig)
 
 #------------------------------------------------------------------------------------------------------------------------------------------ #
 
@@ -396,18 +401,19 @@ def plot_performances(dict_user, dict_sample):
     '''
     Plot figure illustrating the time performances of the algorithm.
     '''
-    fig, (ax1) = plt.subplots(nrows=1,ncols=1,figsize=(16,9))
-    ax1.plot(dict_user['L_t_dem'], label='DEM')
-    ax1.plot(dict_user['L_t_pf'], label='PF')
-    ax1.plot(dict_user['L_t_dem_to_pf'], label='DEM to PF')
-    ax1.plot(dict_user['L_t_pf_to_dem_1'], label='PF to DEM 1')
-    ax1.plot(dict_user['L_t_pf_to_dem_2'], label='PF to DEM 2')
-    ax1.legend()
-    ax1.set_title('Performances (s)')
-    ax1.set_xlabel('Iterations (-)')
-    fig.tight_layout()
-    fig.savefig('plot/performances.png')
-    plt.close(fig)
+    if 'performances' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(nrows=1,ncols=1,figsize=(16,9))
+        ax1.plot(dict_user['L_t_dem'], label='DEM')
+        ax1.plot(dict_user['L_t_pf'], label='PF')
+        ax1.plot(dict_user['L_t_dem_to_pf'], label='DEM to PF')
+        ax1.plot(dict_user['L_t_pf_to_dem_1'], label='PF to DEM 1')
+        ax1.plot(dict_user['L_t_pf_to_dem_2'], label='PF to DEM 2')
+        ax1.legend()
+        ax1.set_title('Performances (s)')
+        ax1.set_xlabel('Iterations (-)')
+        fig.tight_layout()
+        fig.savefig('plot/performances.png')
+        plt.close(fig)
 
 #------------------------------------------------------------------------------------------------------------------------------------------ #
 
@@ -439,24 +445,25 @@ def plot_disp_strain_andrade(dict_user, dict_sample):
         for i in range(len(L_t_log)):
             L_andrade.append(mean_log_k + 1/3*L_t_log[i])
     # plot
-    fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(16,9))
-    # displacement
-    ax1.plot(L_disp)
-    ax1.set_title('Displacement (m)')
-    # strain
-    ax2.plot(L_strain)
-    ax2.set_title(r'$\epsilon_y$ (-)')
-    ax2.set_xlabel('Times (-)')
-    # Andrade
-    ax3.plot(L_t_log, L_strain_log)
-    ax3.plot(L_t_log, L_andrade, color='k', linestyle='dotted')
-    ax3.set_title('Andrade creep law')
-    ax3.set_ylabel(r'log(|$\epsilon_y$|) (-)')
-    ax3.set_xlabel('log(Times) (-)')
-    # close
-    fig.tight_layout()
-    fig.savefig('plot/disp_strain_andrade.png')
-    plt.close(fig)
+    if 'disp_strain_andrade' in dict_user['L_figures']:
+        fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(16,9))
+        # displacement
+        ax1.plot(L_disp)
+        ax1.set_title('Displacement (m)')
+        # strain
+        ax2.plot(L_strain)
+        ax2.set_title(r'$\epsilon_y$ (-)')
+        ax2.set_xlabel('Times (-)')
+        # Andrade
+        ax3.plot(L_t_log, L_strain_log)
+        ax3.plot(L_t_log, L_andrade, color='k', linestyle='dotted')
+        ax3.set_title('Andrade creep law')
+        ax3.set_ylabel(r'log(|$\epsilon_y$|) (-)')
+        ax3.set_xlabel('log(Times) (-)')
+        # close
+        fig.tight_layout()
+        fig.savefig('plot/disp_strain_andrade.png')
+        plt.close(fig)
     # save
     dict_user['L_disp'] = L_disp
     dict_user['L_disp_init'] = L_disp_init
@@ -471,26 +478,27 @@ def plot_maps_configuration(dict_user, dict_sample):
     Plot figure illustrating the current maps of etai and c.
     '''
     # Plot
-    fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(16,9))
-    # eta 1
-    im = ax1.imshow(dict_sample['eta_1_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
-    fig.colorbar(im, ax=ax1)
-    ax1.set_title(r'Map of $\eta_1$',fontsize = 30)
-    # eta 2
-    im = ax2.imshow(dict_sample['eta_2_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
-    fig.colorbar(im, ax=ax2)
-    ax2.set_title(r'Map of $\eta_2$',fontsize = 30)
-    # solute
-    im = ax3.imshow(dict_sample['c_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
-    fig.colorbar(im, ax=ax3)
-    ax3.set_title(r'Map of solute',fontsize = 30)
-    # close
-    fig.tight_layout()
-    if dict_user['print_all_map_config']:
-        fig.savefig('plot/map_etas_solute/'+str(dict_sample['i_DEMPF_ite'])+'.png')
-    else:
-        fig.savefig('plot/map_etas_solute.png')
-    plt.close(fig)
+    if 'maps' in dict_user['L_figures']:
+        fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(16,9))
+        # eta 1
+        im = ax1.imshow(dict_sample['eta_1_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
+        fig.colorbar(im, ax=ax1)
+        ax1.set_title(r'Map of $\eta_1$',fontsize = 30)
+        # eta 2
+        im = ax2.imshow(dict_sample['eta_2_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
+        fig.colorbar(im, ax=ax2)
+        ax2.set_title(r'Map of $\eta_2$',fontsize = 30)
+        # solute
+        im = ax3.imshow(dict_sample['c_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
+        fig.colorbar(im, ax=ax3)
+        ax3.set_title(r'Map of solute',fontsize = 30)
+        # close
+        fig.tight_layout()
+        if dict_user['print_all_map_config']:
+            fig.savefig('plot/map_etas_solute/'+str(dict_sample['i_DEMPF_ite'])+'.png')
+        else:
+            fig.savefig('plot/map_etas_solute.png')
+        plt.close(fig)
 
 #------------------------------------------------------------------------------------------------------------------------------------------ #
 

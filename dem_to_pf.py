@@ -91,13 +91,14 @@ def compute_as(dict_user, dict_sample):
     dict_user['L_P_applied'].append(np.linalg.norm(normalForce)/contact_area)
 
     # plot
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    # overlap
-    ax1.plot(dict_user['L_P_applied'])
-    ax1.set_title('Pressure at the contact (Pa)',fontsize=20)
-    fig.tight_layout()
-    fig.savefig('plot/contact_pressure.png')
-    plt.close(fig)
+    if 'contact_pressure' in dict_user['L_figures'] :
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        # overlap
+        ax1.plot(dict_user['L_P_applied'])
+        ax1.set_title('Pressure at the contact (Pa)',fontsize=20)
+        fig.tight_layout()
+        fig.savefig('plot/contact_pressure.png')
+        plt.close(fig)
 
     # init
     dict_sample['as_map'] = np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x']))
@@ -193,32 +194,34 @@ def compute_ed(dict_user, dict_sample):
     add_element_list(dict_user['L_m_ed_minus_large_contact'], m_ed_minus_large_contact, n_minus_large_contact)
     
     # plot
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    ax1.plot(dict_user['L_m_ed'])
-    ax1.set_title('Mean tilting factor (-)',fontsize=20)
-    fig.tight_layout()
-    fig.savefig('plot/m_ed.png')
-    plt.close(fig)
+    if 'm_ed' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_m_ed'])
+        ax1.set_title('Mean tilting factor (-)',fontsize=20)
+        fig.tight_layout()
+        fig.savefig('plot/m_ed.png')
+        plt.close(fig)
 
     # plot
-    fig, (ax1, ax2) = plt.subplots(1,2,figsize=(16,9))
-    # mean
-    ax1.plot(dict_user['L_m_ed_contact'], label='Contact')
-    ax1.plot(dict_user['L_m_ed_large_contact'], label= 'Large contact')
-    ax1.legend()
-    ax1.set_title('Mean (-)',fontsize=20)
-    # distribution
-    ax2.plot(dict_user['L_m_ed_plus_contact'], label='+ Contact')
-    ax2.plot(dict_user['L_m_ed_minus_contact'], label='- Contact')
-    ax2.plot(dict_user['L_m_ed_plus_large_contact'], label= '+ Large contact')
-    ax2.plot(dict_user['L_m_ed_minus_large_contact'], label= '- Large contact')
-    ax2.legend()
-    ax2.set_title('Mean of + and - (-)')
-    # close
-    plt.suptitle('Mean tilting factor in contact (-)',fontsize=20)
-    fig.tight_layout()
-    fig.savefig('plot/contact_distrib_m_ed.png')
-    plt.close(fig)
+    if 'contact_distrib_m_ed' in dict_user['L_figures']:
+        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(16,9))
+        # mean
+        ax1.plot(dict_user['L_m_ed_contact'], label='Contact')
+        ax1.plot(dict_user['L_m_ed_large_contact'], label= 'Large contact')
+        ax1.legend()
+        ax1.set_title('Mean (-)',fontsize=20)
+        # distribution
+        ax2.plot(dict_user['L_m_ed_plus_contact'], label='+ Contact')
+        ax2.plot(dict_user['L_m_ed_minus_contact'], label='- Contact')
+        ax2.plot(dict_user['L_m_ed_plus_large_contact'], label= '+ Large contact')
+        ax2.plot(dict_user['L_m_ed_minus_large_contact'], label= '- Large contact')
+        ax2.legend()
+        ax2.set_title('Mean of + and - (-)')
+        # close
+        plt.suptitle('Mean tilting factor in contact (-)',fontsize=20)
+        fig.tight_layout()
+        fig.savefig('plot/contact_distrib_m_ed.png')
+        plt.close(fig)
 
     # find nearest node to contact point
     with open('data/dem_to_main.data', 'rb') as handle:
@@ -231,12 +234,13 @@ def compute_ed(dict_user, dict_sample):
     # tracker
     dict_user['L_ed_contact_point'].append(ed_map[-1-i_y, i_x])
     # plot
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    ax1.plot(dict_user['L_ed_contact_point'])
-    ax1.set_title('Tilting factor at contact point (-)',fontsize=20)
-    fig.tight_layout()
-    fig.savefig('plot/contact_point_ed.png')
-    plt.close(fig)
+    if 'contact_point_ed' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_ed_contact_point'])
+        ax1.set_title('Tilting factor at contact point (-)',fontsize=20)
+        fig.tight_layout()
+        fig.savefig('plot/contact_point_ed.png')
+        plt.close(fig)
 
 # -----------------------------------------------------------------------------#
 
@@ -272,14 +276,15 @@ def compute_dt_PF_Aitken(dict_user, dict_sample):
     
     # save and plot
     dict_user['L_dt_PF'].append(dict_user['dt_PF'])
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    ax1.plot(dict_user['L_dt_PF'])
-    ax1.set_yticks([dict_user['dt_PF_0'], dict_user['dt_PF_1'], dict_user['dt_PF_2']])
-    ax1.set_yticklabels(['Level 0', 'Level 1', 'Level 2'])
-    ax1.set_title('Time step used for PF (s)',fontsize=20)
-    fig.tight_layout()
-    fig.savefig('plot/dt_PF.png')
-    plt.close(fig)
+    if 'dt_PF' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_dt_PF'])
+        ax1.set_yticks([dict_user['dt_PF_0'], dict_user['dt_PF_1'], dict_user['dt_PF_2']])
+        ax1.set_yticklabels(['Level 0', 'Level 1', 'Level 2'])
+        ax1.set_title('Time step used for PF (s)',fontsize=20)
+        fig.tight_layout()
+        fig.savefig('plot/dt_PF.png')
+        plt.close(fig)
 
 #-------------------------------------------------------------------------------
 
@@ -402,23 +407,24 @@ def compute_kc(dict_user, dict_sample):
     kc_map = np.array(np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x'])), dtype = bool)
     # iterate on x and y
     for i_y in range(len(dict_sample['y_L'])):
-        for i_x in range(len(dict_sample['x_L'])):
-            if dict_sample['eta_1_map'][i_y, i_x] < 0.5 and dict_sample['eta_2_map'][i_y, i_x] < 0.5: # out of the grain
-                kc_map[i_y, i_x] = True
-            elif dict_sample['eta_1_map'][i_y, i_x] > 0.5 and dict_sample['eta_2_map'][i_y, i_x] > 0.5: # in the contact
-                kc_map[i_y, i_x] = True
-            else :
-                kc_map[i_y, i_x] = False
+        # fast checking
+        if max(dict_sample['eta_1_map'][i_y, :])<0.5 and max(dict_sample['eta_2_map'][i_y, :])<0.5:
+            kc_map[i_y, :] = True
+        # individual checking
+        else :
+            for i_x in range(len(dict_sample['x_L'])):
+                if dict_sample['eta_1_map'][i_y, i_x] < 0.5 and dict_sample['eta_2_map'][i_y, i_x] < 0.5: # out of the grain
+                    kc_map[i_y, i_x] = True
+                elif dict_sample['eta_1_map'][i_y, i_x] > 0.5 and dict_sample['eta_2_map'][i_y, i_x] > 0.5: # in the contact
+                    kc_map[i_y, i_x] = True
+                else :
+                    kc_map[i_y, i_x] = False
 
     # dilation
     dilated_M = binary_dilation(kc_map, dict_user['struct_element'])
 
     #compute the map of the solute diffusion coefficient
-    kc_map = np.array(np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x'])))
-    for i_y in range(len(dict_sample['y_L'])):
-        for i_x in range(len(dict_sample['x_L'])):
-            if dilated_M[i_y, i_x]:
-                kc_map[i_y, i_x] = dict_user['D_solute']
+    kc_map = dict_user['D_solute']*dilated_M
 
     # write
     file_to_write_1 = open('data/kc.txt','w')
@@ -449,7 +455,7 @@ def compute_kc(dict_user, dict_sample):
     for i_y in range(len(dict_sample['y_L'])):
         for i_x in range(len(dict_sample['x_L'])):
             # push solute out of the solid
-            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] > 1.00: # threshold value
+            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] > 1.01: # threshold value
                 solute_moved = False
                 size_window = 1
                 # compute solute to move
@@ -582,7 +588,7 @@ def compute_kc(dict_user, dict_sample):
                     size_window = size_window + 1   
 
             # push solute in of the solid
-            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] < 1.00: # threshold value
+            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] < 0.99: # threshold value
                 solute_moved = False
                 size_window = 1
                 # compute solute to move
@@ -806,27 +812,29 @@ def compare_volumes(dict_user, dict_sample):
     dict_user['L_contact_volume_moose'].append(contact_volume_moose)
 
     # plot
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    ax1.plot(dict_user['L_contact_volume_yade'], label='Yade')
-    ax1.plot(dict_user['L_contact_volume_box'], label='Box')
-    ax1.plot(dict_user['L_contact_volume_moose'], label='Moose')
-    ax1.legend()
-    ax1.set_title(r'Contact volume ($m^3$)',fontsize = 30)
-    fig.tight_layout()
-    fig.savefig('plot/contact_volumes.png')
-    plt.close(fig)
+    if 'contact_volume' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_contact_volume_yade'], label='Yade')
+        ax1.plot(dict_user['L_contact_volume_box'], label='Box')
+        ax1.plot(dict_user['L_contact_volume_moose'], label='Moose')
+        ax1.legend()
+        ax1.set_title(r'Contact volume ($m^3$)',fontsize = 30)
+        fig.tight_layout()
+        fig.savefig('plot/contact_volumes.png')
+        plt.close(fig)
 
     # convert in nb of node
     L_nb_mesh_contact = []
     for i in range(len(dict_user['L_contact_volume_moose'])):
         L_nb_mesh_contact.append(dict_user['L_contact_volume_moose'][i]/(1*(dict_sample['x_L'][1]-dict_sample['x_L'][0])*(dict_sample['y_L'][1]-dict_sample['y_L'][0])))
     # plot
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    ax1.plot(L_nb_mesh_contact)
-    ax1.set_title(r'Number of node in contact volume (-)',fontsize = 30)
-    fig.tight_layout()
-    fig.savefig('plot/contact_nb_node.png')
-    plt.close(fig)
+    if 'contact_nb_node' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(L_nb_mesh_contact)
+        ax1.set_title(r'Number of node in contact volume (-)',fontsize = 30)
+        fig.tight_layout()
+        fig.savefig('plot/contact_nb_node.png')
+        plt.close(fig)
 
 # -----------------------------------------------------------------------------#
 
@@ -874,27 +882,28 @@ def compute_contact_volume(dict_user, dict_sample):
     L_vertices_2 = interpolate_vertices(dict_sample['eta_2_map'], dict_sample['pos_2'], dict_user, dict_sample) # from pf_to_dem.py
 
     # plot
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    # g1
-    L_x, L_y = tuplet_to_list_no_centerized(L_vertices_1) # from tools.py
-    ax1.plot(L_x, L_y, label='G1')
-    # g2
-    L_x, L_y = tuplet_to_list_no_centerized(L_vertices_2) # from tools.py
-    ax1.plot(L_x, L_y, label='G2')
-    # contact 
-    #ax1.plot(L_vertices_x, L_vertices_y, 'x', label='Contact')
-    # box contact
-    ax1.plot([min_x, max_x, max_x, min_x, min_x], [min_y, min_y, max_y, max_y, min_y], label='Contact Box')
-    # close
-    ax1.legend()
-    ax1.axis('equal')
-    plt.suptitle('Contact Detection', fontsize=20)
-    fig.tight_layout()
-    if dict_user['print_all_contact_detection']:
-        fig.savefig('plot/contact_detection/'+str(dict_sample['i_DEMPF_ite'])+'.png')
-    else:
-        fig.savefig('plot/contact_detection.png')
-    plt.close(fig)
+    if 'contact_detection' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        # g1
+        L_x, L_y = tuplet_to_list_no_centerized(L_vertices_1) # from tools.py
+        ax1.plot(L_x, L_y, label='G1')
+        # g2
+        L_x, L_y = tuplet_to_list_no_centerized(L_vertices_2) # from tools.py
+        ax1.plot(L_x, L_y, label='G2')
+        # contact 
+        #ax1.plot(L_vertices_x, L_vertices_y, 'x', label='Contact')
+        # box contact
+        ax1.plot([min_x, max_x, max_x, min_x, min_x], [min_y, min_y, max_y, max_y, min_y], label='Contact Box')
+        # close
+        ax1.legend()
+        ax1.axis('equal')
+        plt.suptitle('Contact Detection', fontsize=20)
+        fig.tight_layout()
+        if dict_user['print_all_contact_detection']:
+            fig.savefig('plot/contact_detection/'+str(dict_sample['i_DEMPF_ite'])+'.png')
+        else:
+            fig.savefig('plot/contact_detection.png')
+        plt.close(fig)
 
     # compare contact volume in Moose and in Yade
     compare_volumes(dict_user, dict_sample) # in dem_to_pf.py

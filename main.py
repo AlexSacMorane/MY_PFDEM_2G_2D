@@ -129,6 +129,7 @@ def run_yade(dict_user, dict_sample):
     'steady_state_detection': dict_user['steady_state_detection'],
     'n_steady_state_detection': dict_user['n_steady_state_detection'],
     'print_all_contact_dem': dict_user['print_all_contact_dem'],
+    'print_contact_dem': 'contact_dem' in dict_user['L_figures'],
     'i_DEMPF_ite': dict_sample['i_DEMPF_ite']
     }
     with open('data/main_to_dem.data', 'wb') as handle:
@@ -175,13 +176,13 @@ dict_sample = {}
 # folders
 create_folder('vtk') # from tools.py
 create_folder('plot') # from tools.py
-if dict_user['print_all_contact_dem']:
+if dict_user['print_all_contact_dem'] and 'contact_dem' in dict_user['L_figures']:
     create_folder('plot/contact_dem') # from tools.py
-if dict_user['print_all_shape_evolution']:
+if dict_user['print_all_shape_evolution'] and 'shape_evolution' in dict_user['L_figures']:
     create_folder('plot/shape_evolution') # from tools.py
-if dict_user['print_all_contact_detection']:
+if dict_user['print_all_contact_detection'] and 'contact_detection' in dict_user['L_figures']:
     create_folder('plot/contact_detection') # from tools.py
-if dict_user['print_all_map_config']:
+if dict_user['print_all_map_config'] and 'maps' in dict_user['L_figures']:
     create_folder('plot/map_etas_solute') # from tools.py
 create_folder('data') # from tools.py
 create_folder('input') # from tools.py
@@ -223,23 +224,24 @@ dict_user['L_m_c'].append(np.mean(dict_sample['c_map']))
 dict_user['L_m_mass'].append(np.mean(dict_sample['eta_1_map'])+np.mean(dict_sample['eta_2_map'])+np.mean(dict_sample['c_map']))
 
 # Plot
-fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(16,9))
-# eta 1
-im = ax1.imshow(dict_sample['eta_1_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
-fig.colorbar(im, ax=ax1)
-ax1.set_title(r'Map of $\eta_1$',fontsize = 30)
-# eta 2
-im = ax2.imshow(dict_sample['eta_2_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
-fig.colorbar(im, ax=ax2)
-ax2.set_title(r'Map of $\eta_2$',fontsize = 30)
-# solute
-im = ax3.imshow(dict_sample['c_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
-fig.colorbar(im, ax=ax3)
-ax3.set_title(r'Map of solute',fontsize = 30)
-# close
-fig.tight_layout()
-fig.savefig('plot/IC_map_etas_solute.png')
-plt.close(fig)
+if 'IC' in dict_user['L_figures']:
+    fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(16,9))
+    # eta 1
+    im = ax1.imshow(dict_sample['eta_1_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
+    fig.colorbar(im, ax=ax1)
+    ax1.set_title(r'Map of $\eta_1$',fontsize = 30)
+    # eta 2
+    im = ax2.imshow(dict_sample['eta_2_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
+    fig.colorbar(im, ax=ax2)
+    ax2.set_title(r'Map of $\eta_2$',fontsize = 30)
+    # solute
+    im = ax3.imshow(dict_sample['c_map'], interpolation = 'nearest', extent=(dict_sample['x_L'][0],dict_sample['x_L'][-1],dict_sample['y_L'][0],dict_sample['y_L'][-1]))
+    fig.colorbar(im, ax=ax3)
+    ax3.set_title(r'Map of solute',fontsize = 30)
+    # close
+    fig.tight_layout()
+    fig.savefig('plot/IC_map_etas_solute.png')
+    plt.close(fig)
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 # Performances

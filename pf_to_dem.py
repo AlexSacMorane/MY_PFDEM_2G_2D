@@ -173,20 +173,21 @@ def read_vtk(dict_user, dict_sample, j_str):
 
     if not dict_sample['Map_known']:
         # plot processors distribution
-        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-        # parameters
-        title_fontsize = 20
-        for i_proc in range(len(L_limits)):
-            limits = L_limits[i_proc]
-            ax1.plot([limits[0],limits[1],limits[1],limits[0],limits[0]],[limits[2],limits[2],limits[3],limits[3],limits[2]], label='proc '+str(i_proc))
-        ax1.legend()
-        ax1.set_xlabel('X (m)')
-        ax1.set_ylabel('Y (m)')
-        ax1.set_title('Processor i has the priority on i+1',fontsize = title_fontsize)
-        fig.suptitle('Processors ditribution',fontsize = 1.2*title_fontsize)    
-        fig.tight_layout()
-        fig.savefig('plot/processors_distribution.png')
-        plt.close(fig)
+        if 'processor' in dict_user['L_figures']:
+            fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+            # parameters
+            title_fontsize = 20
+            for i_proc in range(len(L_limits)):
+                limits = L_limits[i_proc]
+                ax1.plot([limits[0],limits[1],limits[1],limits[0],limits[0]],[limits[2],limits[2],limits[3],limits[3],limits[2]], label='proc '+str(i_proc))
+            ax1.legend()
+            ax1.set_xlabel('X (m)')
+            ax1.set_ylabel('Y (m)')
+            ax1.set_title('Processor i has the priority on i+1',fontsize = title_fontsize)
+            fig.suptitle('Processors ditribution',fontsize = 1.2*title_fontsize)    
+            fig.tight_layout()
+            fig.savefig('plot/processors_distribution.png')
+            plt.close(fig)
         # the map is known
         dict_sample['Map_known'] = True
         dict_sample['L_L_i_XYZ_used'] = L_L_i_XYZ_used
@@ -223,17 +224,18 @@ def compute_vertices(dict_user, dict_sample):
     dict_user['L_PerimeterSphericity'].append(PerimeterSphericity)
     dict_user['L_WidthToLengthRatioSpericity'].append(WidthToLengthRatioSpericity)
 
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    ax1.plot(dict_user['L_AreaSphericity'], label='Area sphericity')
-    ax1.plot(dict_user['L_DiameterSphericity'], label='Diameter sphericity')
-    ax1.plot(dict_user['L_CircleRatioSphericity'], label='Circle ratio sphericity')
-    ax1.plot(dict_user['L_PerimeterSphericity'], label='Perimeter sphericity')
-    ax1.plot(dict_user['L_WidthToLengthRatioSpericity'], label='Width/Length spericity')
-    ax1.legend()
-    plt.suptitle('Grain sphericities (G1)', fontsize=20)
-    fig.tight_layout()
-    fig.savefig('plot/sphericities.png')
-    plt.close(fig)
+    if 'sphericities' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_AreaSphericity'], label='Area sphericity')
+        ax1.plot(dict_user['L_DiameterSphericity'], label='Diameter sphericity')
+        ax1.plot(dict_user['L_CircleRatioSphericity'], label='Circle ratio sphericity')
+        ax1.plot(dict_user['L_PerimeterSphericity'], label='Perimeter sphericity')
+        ax1.plot(dict_user['L_WidthToLengthRatioSpericity'], label='Width/Length spericity')
+        ax1.legend()
+        plt.suptitle('Grain sphericities (G1)', fontsize=20)
+        fig.tight_layout()
+        fig.savefig('plot/sphericities.png')
+        plt.close(fig)
 
     # save data
     dict_save = {
@@ -345,12 +347,13 @@ def control_force(dict_user, dict_sample):
 
     # save and plot
     dict_user['L_force_applied'].append(dict_user['force_applied'])
-    fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-    ax1.plot(dict_user['L_force_applied'])
-    plt.suptitle('Force applied in Yade (DEM)', fontsize=20)
-    fig.tight_layout()
-    fig.savefig('plot/force_applied.png')
-    plt.close(fig)
+    if 'force_applied' in dict_user['L_figures']:        
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_force_applied'])
+        plt.suptitle('Force applied in Yade (DEM)', fontsize=20)
+        fig.tight_layout()
+        fig.savefig('plot/force_applied.png')
+        plt.close(fig)
 
 
 

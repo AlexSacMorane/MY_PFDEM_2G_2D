@@ -23,6 +23,7 @@ n_ite_max = dict_save['n_ite_max']
 steady_state_detection = dict_save['steady_state_detection']
 n_steady_state_detection = dict_save['n_steady_state_detection']
 print_all_contact_dem = dict_save['print_all_contact_dem']
+print_contact_dem = dict_save['print_contact_dem']
 i_DEMPF_ite = dict_save['i_DEMPF_ite']
 
 # from plane interpolation
