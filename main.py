@@ -96,7 +96,7 @@ def run_moose(dict_user, dict_sample):
     read_vtk(dict_user, dict_sample, last_j_str) # in pf_to_dem.py
     tac_pf_to_dem = time.perf_counter() # compute pf_to_dem performances
     dict_user['L_t_pf_to_dem_2'].append(tac_pf_to_dem-tic_pf_to_dem)
-    dict_user['read_pf'] = dict_user['sort_pf'] + tac_pf_to_dem-tic_pf_to_dem 
+    dict_user['read_pf'] = dict_user['read_pf'] + tac_pf_to_dem-tic_pf_to_dem 
     
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 
