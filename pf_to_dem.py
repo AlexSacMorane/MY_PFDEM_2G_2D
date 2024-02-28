@@ -302,7 +302,7 @@ def interpolate_vertices(eta_i_map, center, dict_user, dict_sample):
                 p_mean = p_mean/len(L_p)
                 # look phi in L_phi
                 i_phi = 0
-                while not (L_phi[i_phi] <= phi and phi < L_phi[i_phi+1]) :
+                while not (L_phi[i_phi] <= phi and phi <= L_phi[i_phi+1]) :
                     i_phi = i_phi + 1
                 # save p_mean in the map
                 map_phi[i_phi].append(p_mean)
