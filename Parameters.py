@@ -82,7 +82,7 @@ def get_parameters():
     y_min = -2.4*radius
     y_max =  2.4*radius
     n_mesh_y = 480
-    m_size_mesh = (x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1)
+    m_size_mesh = ((x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1))/2
 
     # PF material parameters
     # the energy barrier
@@ -107,7 +107,7 @@ def get_parameters():
 
     # diffusion of the solute
     D_solute = 10 # m2 s-1
-    n_struct_element = int(round(radius*0.20/m_size_mesh,0))
+    n_struct_element = int(round(radius*0.10/m_size_mesh,0))
     struct_element = np.array(np.ones((n_struct_element,n_struct_element)), dtype=bool) # for dilation
 
     # Aitken method
