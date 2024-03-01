@@ -2,7 +2,7 @@
 
 import pickle, math, os, shutil
 from pathlib import Path
-from scipy.ndimage import binary_dilation
+from scipy.ndimage import binary_dilation, label
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -451,11 +451,25 @@ def compute_kc(dict_user, dict_sample):
     # close
     file_to_write_1.close()
 
+    # compute the number of grain detected in kc_map
+    invert_dilated_M = np.invert(dilated_M)
+    labelled_image, num_features = label(invert_dilated_M)
+    dict_user['L_grain_kc_map'].append(num_features)
+
+    # plot 
+    if 'n_grain_kc_map' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_grain_kc_map'])
+        ax1.set_title('Number of grains detected (-)',fontsize=20)
+        fig.tight_layout()
+        fig.savefig('plot/n_grain_detected.png')
+        plt.close(fig)
+
     # iterate on the mesh
     for i_y in range(len(dict_sample['y_L'])):
         for i_x in range(len(dict_sample['x_L'])):
             # push solute out of the solid
-            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] > 1.0: # threshold value
+            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] > 1: # threshold value
                 solute_moved = False
                 size_window = 1
                 # compute solute to move

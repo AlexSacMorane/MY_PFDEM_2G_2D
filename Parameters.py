@@ -16,8 +16,8 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 10 # number of PFDEM iterations
-    n_proc = 5 # number of processors used
+    n_DEMPF_ite = 50 # number of PFDEM iterations
+    n_proc = 6 # number of processors used
     j_total = 0 # index global of results
     save_simulation = False # indicate if the simulation is saved
     n_max_vtk_files = None # maximum number of vtk files (can be None to save all files)
@@ -26,9 +26,9 @@ def get_parameters():
     # Available:
     # contact_pressure, contact_distrib_m_ed, contact_point_ed, contact_volume, contact_nb_node
     # contact_detection, contact_h_s_v, contact_dem
-    # m_ed, dt_PF, IC, processor, sphericities, force_applied, maps
+    # m_ed, dt_PF, IC, processor, sphericities, force_applied, maps, n_grain_kc_map
     # shape_evolution, n_vertices, sum_etai_c, mean_etai_c, performances, disp_strain_andrade
-    L_figures = ['contact_distrib_m_ed', 'contact_pressure', 'disp_strain_andrade', 'sphericities', 'shape_evolution']
+    L_figures = ['maps', 'shape_evolution', 'mean_etai_c', 'n_grain_kc_map']
 
     # Figure (plot all or current)
     # The maps configuration
@@ -78,10 +78,10 @@ def get_parameters():
     # mesh
     x_min = -1.3*radius
     x_max =  1.3*radius
-    n_mesh_x = 260
-    y_min = -2.4*radius
-    y_max =  2.4*radius
-    n_mesh_y = 480
+    n_mesh_x = 300
+    y_min = -2.3*radius
+    y_max =  2.3*radius
+    n_mesh_y = 600
     m_size_mesh = ((x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1))/2
 
     # PF material parameters
@@ -94,20 +94,20 @@ def get_parameters():
     # the gradient coefficient
     kappa_eta = Energy_barrier*w*w/9.86
     # the mobility
-    Mobility = 0.2
+    Mobility = 3/2.2*w
     Mobility_eff = 2.2/3*Mobility/w
 
     # kinetics of dissolution and precipitation
     # it affects the tilting coefficient in Ed
     k_diss = 0.1 # mol.m-2.s-1
-    k_prec = k_diss
+    k_prec = 0.1
 
     # molar concentration at the equilibrium
     C_eq = 1 # number of C_ref, mol m-3
 
     # diffusion of the solute
     D_solute = 10 # m2 s-1
-    n_struct_element = int(round(radius*0.10/m_size_mesh,0))
+    n_struct_element = int(round(radius*0.20/m_size_mesh,0))
     struct_element = np.array(np.ones((n_struct_element,n_struct_element)), dtype=bool) # for dilation
 
     # Aitken method
@@ -175,6 +175,7 @@ def get_parameters():
     L_CircleRatioSphericity = []
     L_PerimeterSphericity = []
     L_WidthToLengthRatioSpericity = []
+    L_grain_kc_map = []
 
     #---------------------------------------------------------------------#
     # dictionnary
@@ -266,7 +267,8 @@ def get_parameters():
     'L_DiameterSphericity': L_DiameterSphericity,
     'L_CircleRatioSphericity': L_CircleRatioSphericity,
     'L_PerimeterSphericity': L_PerimeterSphericity,
-    'L_WidthToLengthRatioSpericity': L_WidthToLengthRatioSpericity
+    'L_WidthToLengthRatioSpericity': L_WidthToLengthRatioSpericity,
+    'L_grain_kc_map': L_grain_kc_map
     }
 
     return dict_user
