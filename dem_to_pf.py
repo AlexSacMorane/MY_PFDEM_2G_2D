@@ -455,7 +455,7 @@ def compute_kc(dict_user, dict_sample):
     for i_y in range(len(dict_sample['y_L'])):
         for i_x in range(len(dict_sample['x_L'])):
             # push solute out of the solid
-            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] > 1.01: # threshold value
+            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] > 1.0: # threshold value
                 solute_moved = False
                 size_window = 1
                 # compute solute to move
@@ -588,7 +588,7 @@ def compute_kc(dict_user, dict_sample):
                     size_window = size_window + 1   
 
             # push solute in of the solid
-            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] < 0.99: # threshold value
+            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] < 1: # threshold value
                 solute_moved = False
                 size_window = 1
                 # compute solute to move
