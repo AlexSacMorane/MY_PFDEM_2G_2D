@@ -35,5 +35,5 @@ The goal of the DEM step is to compute a steady-state configuration. Grains are 
 ## What is next ?
 Some next releases are presented here.
 
-- develop the project
+- write the online documentation
 - publish an article about the simulation and result
