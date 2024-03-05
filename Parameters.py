@@ -176,6 +176,7 @@ def get_parameters():
     L_PerimeterSphericity = []
     L_WidthToLengthRatioSpericity = []
     L_grain_kc_map = []
+    L_sample_height = []
 
     #---------------------------------------------------------------------#
     # dictionnary
@@ -268,7 +269,8 @@ def get_parameters():
     'L_CircleRatioSphericity': L_CircleRatioSphericity,
     'L_PerimeterSphericity': L_PerimeterSphericity,
     'L_WidthToLengthRatioSpericity': L_WidthToLengthRatioSpericity,
-    'L_grain_kc_map': L_grain_kc_map
+    'L_grain_kc_map': L_grain_kc_map,
+    'L_sample_height': L_sample_height
     }
 
     return dict_user

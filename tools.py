@@ -546,9 +546,6 @@ def compute_sphericities(L_vertices):
             #there is 1% margin here because of the numerical approximation
             if np.linalg.norm(L_vertices[i_p]-center_circumscribing) > (1+0.05)*radius_circumscribing and i_p not in L_ijk_circumscribing: #vertex outside the circle computed
                 Circumscribing_Found = False
-        #see article for other case
-        if not Circumscribing_Found:
-            raise ValueError('This algorithm is not developped for this case...')
 
     #look for length and width
     length = MaxDistance
@@ -600,13 +597,19 @@ def compute_sphericities(L_vertices):
         SurfaceParticle = SurfaceParticle + 0.5*np.linalg.norm(np.cross(AB, AC))
 
     #Area Sphericity
-    SurfaceCircumscribing = math.pi*radius_circumscribing**2
-    AreaSphericity = SurfaceParticle / SurfaceCircumscribing
+    if Circumscribing_Found :
+        SurfaceCircumscribing = math.pi*radius_circumscribing**2
+        AreaSphericity = SurfaceParticle / SurfaceCircumscribing
+    else :
+        AreaSphericity = 1
 
     #Diameter Sphericity
-    DiameterSameAreaParticle = 2*math.sqrt(SurfaceParticle/math.pi)
-    DiameterCircumscribing = radius_circumscribing*2
-    DiameterSphericity = DiameterSameAreaParticle / DiameterCircumscribing
+    if Circumscribing_Found :
+        DiameterSameAreaParticle = 2*math.sqrt(SurfaceParticle/math.pi)
+        DiameterCircumscribing = radius_circumscribing*2
+        DiameterSphericity = DiameterSameAreaParticle / DiameterCircumscribing
+    else :
+        DiameterSphericity = 1
 
     #Circle Ratio Sphericity
     DiameterInscribing = radius_inscribing*2

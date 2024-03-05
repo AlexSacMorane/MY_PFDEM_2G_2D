@@ -215,6 +215,20 @@ def compute_vertices(dict_user, dict_sample):
     L_vertices_1 = interpolate_vertices(dict_sample['eta_1_map'], dict_sample['pos_1'], dict_user, dict_sample)
     L_vertices_2 = interpolate_vertices(dict_sample['eta_2_map'], dict_sample['pos_2'], dict_user, dict_sample)
 
+    # save data
+    dict_save = {
+    'L_vertices_1': L_vertices_1,
+    'L_vertices_2': L_vertices_2
+    }
+    with open('data/planes.data', 'wb') as handle:
+        pickle.dump(dict_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # compute sample height and vertical strain
+    L_x_1, L_y_1 = tools.tuplet_to_list(L_vertices_1) # from tools.py
+    L_x_2, L_y_2 = tools.tuplet_to_list(L_vertices_2) # from tools.py
+    sample_height = max(L_y_2)-min(L_y_1)
+    dict_sample['L_sample_height'].append(sample_height)
+
     # compute sphericities
     AreaSphericity, DiameterSphericity, CircleRatioSphericity, PerimeterSphericity, WidthToLengthRatioSpericity = tools.compute_sphericities(L_vertices_1) # from tools.py
     # save and plot 
@@ -237,13 +251,6 @@ def compute_vertices(dict_user, dict_sample):
         fig.savefig('plot/sphericities.png')
         plt.close(fig)
 
-    # save data
-    dict_save = {
-    'L_vertices_1': L_vertices_1,
-    'L_vertices_2': L_vertices_2
-    }
-    with open('data/planes.data', 'wb') as handle:
-        pickle.dump(dict_save, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 # -----------------------------------------------------------------------------#
 
