@@ -227,7 +227,7 @@ def compute_vertices(dict_user, dict_sample):
     L_x_1, L_y_1 = tools.tuplet_to_list(L_vertices_1) # from tools.py
     L_x_2, L_y_2 = tools.tuplet_to_list(L_vertices_2) # from tools.py
     sample_height = max(L_y_2)-min(L_y_1)
-    dict_sample['L_sample_height'].append(sample_height)
+    dict_user['L_sample_height'].append(sample_height)
 
     # compute sphericities
     AreaSphericity, DiameterSphericity, CircleRatioSphericity, PerimeterSphericity, WidthToLengthRatioSpericity = tools.compute_sphericities(L_vertices_1) # from tools.py
