@@ -1,6 +1,6 @@
 # MY_PFDEM_2G_2D
 
-Phase-Field Discrete Element Modelisation with solute generation applied to two grains. It uses Moose (PF) and Yade (DEM) softwares.
+Phase-Field Discrete Element Modelization with solute generation applied to two grains. It uses Moose (PF) and Yade (DEM) softwares.
 
 ## Simulation presentation
 The goal is to simulate the pressure solution phenomena (illustrated by the following scheme) between two grains.
