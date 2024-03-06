@@ -612,8 +612,11 @@ def compute_sphericities(L_vertices):
         DiameterSphericity = 1
 
     #Circle Ratio Sphericity
-    DiameterInscribing = radius_inscribing*2
-    CircleRatioSphericity = DiameterInscribing / DiameterCircumscribing
+    if Circumscribing_Found :
+        DiameterInscribing = radius_inscribing*2
+        CircleRatioSphericity = DiameterInscribing / DiameterCircumscribing
+    else : 
+        CircleRatioSphericity = 1
 
     #Perimeter Sphericity
     PerimeterSameAreaParticle = 2*math.sqrt(SurfaceParticle*math.pi)
