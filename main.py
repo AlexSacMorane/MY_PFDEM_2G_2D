@@ -9,7 +9,6 @@ from pathlib import Path
 from dem_to_pf import *
 from pf_to_dem import *
 from ic import *
-from dem import *
 from tools import *
 from Parameters import *
 
