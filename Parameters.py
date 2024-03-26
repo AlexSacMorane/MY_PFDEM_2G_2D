@@ -94,8 +94,7 @@ def get_parameters():
     # the gradient coefficient
     kappa_eta = Energy_barrier*w*w/9.86
     # the mobility
-    Mobility = 3/2.2*w
-    Mobility_eff = 2.2/3*Mobility/w
+    Mobility_eff = 1
 
     # kinetics of dissolution and precipitation
     # it affects the tilting coefficient in Ed
@@ -208,7 +207,6 @@ def get_parameters():
     'y_min': y_min,
     'y_max': y_max,
     'n_mesh_y': n_mesh_y,
-    'Mobility': Mobility,
     'Mobility_eff': Mobility_eff,
     'kappa_eta': kappa_eta,
     'n_int': n_int,
