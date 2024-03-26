@@ -20,16 +20,22 @@ def run_moose(dict_user, dict_sample):
     Prepare and run moose simulation.
     '''
     # from dem to pf
+    # compute mass
+    compute_mass(dict_user, dict_sample) # from tools.py
     tic_dem_to_pf = time.perf_counter() # compute dem_to_pf performances
     tic_tempo = time.perf_counter() # compute performances
     move_phasefield(dict_user, dict_sample) # in dem_to_pf.py
     tac_tempo = time.perf_counter() # compute performances
     dict_user['move_pf'] = dict_user['move_pf'] + tac_tempo-tic_tempo 
+    # check mass
+    compute_mass_loss(dict_user, dict_sample, 'L_loss_move_pf') # from tools.py
+    # compute volume contact
     tic_tempo = time.perf_counter() # compute performances
     compute_contact_volume(dict_user, dict_sample) # in dem_to_pf.py
     tac_tempo = time.perf_counter() # compute performances
     dict_user['comp_con_vol'] = dict_user['comp_con_vol'] + tac_tempo-tic_tempo 
-    
+
+
     # Control and adapt the force applied in DEM
     # YADE assumes only convex shapes. If particle is concave, it creates false volume
     # the control of the force is here to compensate this phenomena 
@@ -48,10 +54,16 @@ def run_moose(dict_user, dict_sample):
     dict_user['plot_con_v_s_d'] = dict_user['plot_con_v_s_d'] + tac_tempo-tic_tempo 
 
     # from dem to pf
+    # compute mass
+    compute_mass(dict_user, dict_sample) # from tools.py
+    # compute diffusivity map
     tic_tempo = time.perf_counter() # compute performances
     compute_kc(dict_user, dict_sample) # in dem_to_pf.py
     tac_tempo = time.perf_counter() # compute performances
     dict_user['comp_kc'] = dict_user['comp_kc'] + tac_tempo-tic_tempo 
+    # check mass
+    compute_mass_loss(dict_user, dict_sample, 'L_loss_kc') # from tools.py
+    # compute activity map
     tic_tempo = time.perf_counter() # compute performances
     compute_as(dict_user, dict_sample) # in dem_to_pf.py
     tac_tempo = time.perf_counter() # compute performances
@@ -76,6 +88,8 @@ def run_moose(dict_user, dict_sample):
     dict_user['write_i'] = dict_user['write_i'] + tac_tempo-tic_tempo 
     
     # pf
+    # compute mass
+    compute_mass(dict_user, dict_sample) # from tools.py
     print('Running PF')
     tic_pf = time.perf_counter() # compute pf performances
     os.system('mpiexec -n '+str(dict_user['n_proc'])+' ~/projects/moose/modules/phase_field/phase_field-opt -i pf.i')
@@ -96,7 +110,10 @@ def run_moose(dict_user, dict_sample):
     tac_pf_to_dem = time.perf_counter() # compute pf_to_dem performances
     dict_user['L_t_pf_to_dem_2'].append(tac_pf_to_dem-tic_pf_to_dem)
     dict_user['read_pf'] = dict_user['read_pf'] + tac_pf_to_dem-tic_pf_to_dem 
+    # check mass
+    compute_mass_loss(dict_user, dict_sample, 'L_loss_pf') # from tools.py
     
+
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 
 def run_yade(dict_user, dict_sample):
@@ -140,6 +157,7 @@ def run_yade(dict_user, dict_sample):
     print('Running DEM')
     tic_dem = time.perf_counter() # compute dem performances
     os.system('yadedaily -j '+str(dict_user['n_proc'])+' -x -n dem_base.py')
+    #os.system('yadedaily -j '+str(dict_user['n_proc'])+' dem_base.py')
     tac_dem = time.perf_counter() # compute dem performances
     dict_user['L_t_dem'].append(tac_dem-tic_dem)
     dict_user['solve_dem'] = dict_user['solve_dem'] + tac_dem-tic_dem 
@@ -154,9 +172,12 @@ def run_yade(dict_user, dict_sample):
     tic_tempo = time.perf_counter() # compute performances
     with open('data/dem_to_main.data', 'rb') as handle:
         dict_save = pickle.load(handle)
+    # update the position
     dict_sample['pos_1'] = dict_save['pos_1']
     dict_sample['pos_2'] = dict_save['pos_2']
     tac_tempo = time.perf_counter() # compute performances
+    # track the y contact point
+    dict_user['L_y_contactPoint'].append(dict_save['contact_point'][1])
     dict_user['read_dem'] = dict_user['read_dem'] + tac_tempo-tic_tempo 
     
     # plot evolution of the number of vertices used in Yade
@@ -299,6 +320,8 @@ while dict_sample['i_DEMPF_ite'] < dict_user['n_DEMPF_ite']:
     # plot displacement, strain, fit with Andrade law
     tic_tempo = time.perf_counter() # compute performances
     plot_disp_strain_andrade(dict_user, dict_sample) # from tools.py
+    plot_y_contactPoint(dict_user, dict_sample) # from tools.py
+    plot_sample_height(dict_user, dict_sample) # from tools.py
     tac_tempo = time.perf_counter() # compute performances
     dict_user['plot_d_s_a'] = dict_user['plot_d_s_a'] + tac_tempo-tic_tempo 
 

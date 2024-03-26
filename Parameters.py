@@ -16,19 +16,22 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 50 # number of PFDEM iterations
+    n_DEMPF_ite = 175 # number of PFDEM iterations
     n_proc = 6 # number of processors used
     j_total = 0 # index global of results
     save_simulation = False # indicate if the simulation is saved
-    n_max_vtk_files = None # maximum number of vtk files (can be None to save all files)
+    n_max_vtk_files = 20 # maximum number of vtk files (can be None to save all files)
 
     # Select Figures to plot
     # Available:
     # contact_pressure, contact_distrib_m_ed, contact_point_ed, contact_volume, contact_nb_node
     # contact_detection, contact_h_s_v, contact_dem
     # m_ed, dt_PF, IC, processor, sphericities, force_applied, maps, n_grain_kc_map
-    # shape_evolution, n_vertices, sum_etai_c, mean_etai_c, performances, disp_strain_andrade
-    L_figures = ['maps', 'shape_evolution', 'mean_etai_c', 'n_grain_kc_map']
+    # shape_evolution, n_vertices, sum_etai_c, mean_etai_c, mass_loss, performances
+    # disp_strain_andrade, sample_height, y_contactPoint
+    L_figures = ['maps', 'shape_evolution', 'mean_etai_c', 'n_grain_kc_map', 'mass_loss', \
+                 'contact_volume', 'contact_h_s_v', 'contact_pressure', 'contact_distrib_m_ed', 'contact_point_ed',\
+                 'disp_strain_andrade', 'sample_height', 'y_contactPoint']
 
     # Figure (plot all or current)
     # The maps configuration
@@ -78,10 +81,10 @@ def get_parameters():
     # mesh
     x_min = -1.3*radius
     x_max =  1.3*radius
-    n_mesh_x = 300
+    n_mesh_x = 100
     y_min = -2.3*radius
     y_max =  2.3*radius
-    n_mesh_y = 600
+    n_mesh_y = 200
     m_size_mesh = ((x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1))/2
 
     # PF material parameters
@@ -94,7 +97,8 @@ def get_parameters():
     # the gradient coefficient
     kappa_eta = Energy_barrier*w*w/9.86
     # the mobility
-    Mobility_eff = 1
+    Mobility = 3/2.2*w
+    Mobility_eff = 2.2/3*Mobility/w
 
     # kinetics of dissolution and precipitation
     # it affects the tilting coefficient in Ed
@@ -106,13 +110,13 @@ def get_parameters():
 
     # diffusion of the solute
     D_solute = 10 # m2 s-1
-    n_struct_element = int(round(radius*0.20/m_size_mesh,0))
+    n_struct_element = int(round(radius*0.10/m_size_mesh,0))
     struct_element = np.array(np.ones((n_struct_element,n_struct_element)), dtype=bool) # for dilation
 
     # Aitken method
     # the time stepping and duration of one PF simualtion
     # level 0
-    dt_PF_0 = 0.2 # time step
+    dt_PF_0 = 0.1 # time step
     # level 1
     dt_PF_1 = dt_PF_0/2
     m_ed_contact_1 = 0.1
@@ -120,7 +124,7 @@ def get_parameters():
     dt_PF_2 = dt_PF_1/2
     m_ed_contact_2 = 0.2
     # n_t_PF*dt_PF gives the total time duration
-    n_t_PF = 3 # number of iterations
+    n_t_PF = 10 # number of iterations
 
     # Contact box detection
     eta_contact_box_detection = 0.25 # value of the phase field searched to determine the contact box
@@ -176,6 +180,19 @@ def get_parameters():
     L_WidthToLengthRatioSpericity = []
     L_grain_kc_map = []
     L_sample_height = []
+    L_y_contactPoint = []
+    L_loss_move_pf_eta1 = []
+    L_loss_move_pf_eta2 = []
+    L_loss_move_pf_c = []
+    L_loss_move_pf_m = []
+    L_loss_kc_eta1 = []
+    L_loss_kc_eta2 = []
+    L_loss_kc_c = []
+    L_loss_kc_m = []
+    L_loss_pf_eta1 = []
+    L_loss_pf_eta2 = []
+    L_loss_pf_c = []
+    L_loss_pf_m = []
 
     #---------------------------------------------------------------------#
     # dictionnary
@@ -207,6 +224,7 @@ def get_parameters():
     'y_min': y_min,
     'y_max': y_max,
     'n_mesh_y': n_mesh_y,
+    'Mobility': Mobility,
     'Mobility_eff': Mobility_eff,
     'kappa_eta': kappa_eta,
     'n_int': n_int,
@@ -268,7 +286,20 @@ def get_parameters():
     'L_PerimeterSphericity': L_PerimeterSphericity,
     'L_WidthToLengthRatioSpericity': L_WidthToLengthRatioSpericity,
     'L_grain_kc_map': L_grain_kc_map,
-    'L_sample_height': L_sample_height
+    'L_sample_height': L_sample_height,
+    'L_y_contactPoint': L_y_contactPoint,
+    'L_loss_move_pf_eta1': L_loss_move_pf_eta1,
+    'L_loss_move_pf_eta2': L_loss_move_pf_eta2,
+    'L_loss_move_pf_c': L_loss_move_pf_c,
+    'L_loss_move_pf_m': L_loss_move_pf_m,
+    'L_loss_kc_eta1': L_loss_kc_eta1,
+    'L_loss_kc_eta2': L_loss_kc_eta2,
+    'L_loss_kc_c': L_loss_kc_c,
+    'L_loss_kc_m': L_loss_kc_m,
+    'L_loss_pf_eta1': L_loss_pf_eta1,
+    'L_loss_pf_eta2': L_loss_pf_eta2,
+    'L_loss_pf_c': L_loss_pf_c,
+    'L_loss_pf_m': L_loss_pf_m
     }
 
     return dict_user

@@ -397,6 +397,56 @@ def plot_sum_mean_etai_c(dict_user, dict_sample):
 
 #------------------------------------------------------------------------------------------------------------------------------------------ #
 
+def compute_mass(dict_user, dict_sample):
+    '''
+    Compute the mass at a certain time.
+     
+    Mass is sum of etai and c.
+    '''
+    # sum of masses
+    dict_user['sum_eta_1_tempo'] = np.sum(dict_sample['eta_1_map'])
+    dict_user['sum_eta_2_tempo'] = np.sum(dict_sample['eta_2_map'])
+    dict_user['sum_c_tempo'] = np.sum(dict_sample['c_map'])
+    dict_user['sum_mass_tempo'] = np.sum(dict_sample['eta_1_map'])+np.sum(dict_sample['eta_2_map'])+np.sum(dict_sample['c_map'])
+    
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def compute_mass_loss(dict_user, dict_sample, tracker_key):
+    '''
+    Compute the mass loss from the previous compute_mass() call.
+     
+    Plot in the given tracker.
+    Mass is sum of etai and c.
+    '''
+    # delta masses
+    deta1 = np.sum(dict_sample['eta_1_map']) - dict_user['sum_eta_1_tempo']
+    deta2 = np.sum(dict_sample['eta_2_map']) - dict_user['sum_eta_2_tempo']
+    dc = np.sum(dict_sample['c_map']) - dict_user['sum_c_tempo']
+    dm = np.sum(dict_sample['eta_1_map'])+np.sum(dict_sample['eta_2_map'])+np.sum(dict_sample['c_map']) - dict_user['sum_mass_tempo']
+    
+    # save
+    dict_user[tracker_key+'_eta1'].append(deta1)
+    dict_user[tracker_key+'_eta2'].append(deta2)
+    dict_user[tracker_key+'_c'].append(dc)
+    dict_user[tracker_key+'_m'].append(dm)
+
+    # plot
+    if 'mass_loss' in dict_user['L_figures']:
+        fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2,figsize=(16,9))
+        ax1.plot(dict_user[tracker_key+'_eta1'])
+        ax1.set_title(r'$\eta_1$ loss')
+        ax2.plot(dict_user[tracker_key+'_eta2'])
+        ax2.set_title(r'$\eta_2$ loss')
+        ax3.plot(dict_user[tracker_key+'_c'])
+        ax3.set_title(r'$c$ loss')
+        ax4.plot(dict_user[tracker_key+'_m'])
+        ax4.set_title(r'$\eta_1$ + $\eta_2$ + $c$ loss')
+        fig.tight_layout()
+        fig.savefig('plot/'+tracker_key+'.png')
+        plt.close(fig)
+
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
 def plot_performances(dict_user, dict_sample):
     '''
     Plot figure illustrating the time performances of the algorithm.
@@ -421,6 +471,13 @@ def plot_disp_strain_andrade(dict_user, dict_sample):
     '''
     Plot figure illustrating the displacement, the strain and the fit with the Andrade law.
     '''
+    # pp time PF
+    for i_dt in range(len(dict_user['L_dt_PF'])):
+        if i_dt == 0:
+            L_t_PF = [dict_user['L_dt_PF'][0]]
+        else:
+            L_t_PF.append(L_t_PF[-1] + dict_user['L_dt_PF'][i_dt])
+
     # pp displacement
     L_disp_init = [0]
     L_disp = [0]
@@ -438,22 +495,83 @@ def plot_disp_strain_andrade(dict_user, dict_sample):
     if len(L_strain) > 1:
         for i in range(1,len(L_strain)):
             L_strain_log.append(math.log(abs(L_strain[i])))
-            L_t_log.append(math.log(i+1))
+            L_t_log.append(math.log(L_t_PF[i-1]))
             mean_log_k = mean_log_k + (L_strain_log[-1] - 1/3*L_t_log[-1])
         mean_log_k = mean_log_k/len(L_strain) # mean k in Andrade creep law
         # compute fitted Andrade creep law
         for i in range(len(L_t_log)):
             L_andrade.append(mean_log_k + 1/3*L_t_log[i])
     # plot
-    if 'disp_strain_andrade' in dict_user['L_figures']:
+    if 'disp_strain_andrade' in dict_user['L_figures'] and dict_sample['i_DEMPF_ite'] > 10:
         fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(16,9))
         # displacement
-        ax1.plot(L_disp)
+        ax1.plot(L_t_PF, L_disp)
         ax1.set_title('Displacement (m)')
+        ax1.set_xlabel('PF Times (-)')
         # strain
-        ax2.plot(L_strain)
+        ax2.plot(L_t_PF, L_strain)
         ax2.set_title(r'$\epsilon_y$ (-)')
-        ax2.set_xlabel('Times (-)')
+        ax2.set_xlabel('PF Times (-)')
+        # Andrade
+        ax3.plot(L_t_log, L_strain_log)
+        ax3.plot(L_t_log, L_andrade, color='k', linestyle='dotted')
+        ax3.set_title('Andrade creep law')
+        ax3.set_ylabel(r'log(|$\epsilon_y$|) (-)')
+        ax3.set_xlabel('log(PF Times) (-)')
+        # close
+        fig.tight_layout()
+        fig.savefig('plot/disp_strain_andrade.png')
+        plt.close(fig)
+    # save
+    dict_user['L_disp'] = L_disp
+    dict_user['L_disp_init'] = L_disp_init
+    dict_user['L_strain'] = L_strain
+    dict_user['L_andrade'] = L_andrade
+    dict_user['mean_log_k'] = mean_log_k
+
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def plot_sample_height(dict_user, dict_sample):
+    '''
+    Plot figure illustrating the displacement, the strain and the fit with the Andrade law, assuming the sample height.
+    '''
+    # pp time PF
+    for i_dt in range(len(dict_user['L_dt_PF'])):
+        if i_dt == 0:
+            L_t_PF = [dict_user['L_dt_PF'][0]]
+        else:
+            L_t_PF.append(L_t_PF[-1] + dict_user['L_dt_PF'][i_dt])
+
+    # pp sample height
+    L_strain = []
+    for i_height in range(len(dict_user['L_sample_height'])):
+        L_strain.append((dict_user['L_sample_height'][i_height]-4*dict_user['radius'])/(4*dict_user['radius']))
+
+    # compute andrade
+    L_andrade = []
+    L_strain_log = []
+    L_t_log = []
+    mean_log_k = 0
+    if len(L_strain) > 1:
+        for i in range(1,len(L_strain)):
+            L_strain_log.append(math.log(abs(L_strain[i])))
+            L_t_log.append(math.log(L_t_PF[i-1]))
+            mean_log_k = mean_log_k + (L_strain_log[-1] - 1/3*L_t_log[-1])
+        mean_log_k = mean_log_k/len(L_strain) # mean k in Andrade creep law
+        # compute fitted Andrade creep law
+        for i in range(len(L_t_log)):
+            L_andrade.append(mean_log_k + 1/3*L_t_log[i])
+    # plot
+    if 'sample_height' in dict_user['L_figures'] and dict_sample['i_DEMPF_ite'] > 10:
+        fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(16,9))
+        # displacement
+        ax1.plot(L_t_PF[1:], dict_user['L_sample_height'][1:])
+        ax1.set_title('Sample height (m)')
+        ax1.set_xlabel('PF Times (-)')
+        # strain
+        ax2.plot(L_t_PF, L_strain)
+        ax2.set_title(r'$\epsilon_y$ (-)')
+        ax2.set_xlabel('PF Times (-)')
         # Andrade
         ax3.plot(L_t_log, L_strain_log)
         ax3.plot(L_t_log, L_andrade, color='k', linestyle='dotted')
@@ -462,11 +580,67 @@ def plot_disp_strain_andrade(dict_user, dict_sample):
         ax3.set_xlabel('log(Times) (-)')
         # close
         fig.tight_layout()
-        fig.savefig('plot/disp_strain_andrade.png')
+        fig.savefig('plot/sample_height.png')
         plt.close(fig)
     # save
-    dict_user['L_disp'] = L_disp
-    dict_user['L_disp_init'] = L_disp_init
+    dict_user['L_strain'] = L_strain
+    dict_user['L_andrade'] = L_andrade
+    dict_user['mean_log_k'] = mean_log_k
+
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def plot_y_contactPoint(dict_user, dict_sample):
+    '''
+    Plot figure illustrating the displacement, the strain and the fit with the Andrade law, assuming the y coordinate of the contact point.
+    '''
+    # pp time PF
+    for i_dt in range(len(dict_user['L_dt_PF'])):
+        if i_dt == 0:
+            L_t_PF = [dict_user['L_dt_PF'][0]]
+        else:
+            L_t_PF.append(L_t_PF[-1] + dict_user['L_dt_PF'][i_dt])
+
+    # pp sample height
+    L_strain = []
+    for i_height in range(0,len(dict_user['L_y_contactPoint'])):
+        L_strain.append((dict_user['L_y_contactPoint'][i_height]-dict_user['L_y_contactPoint'][0])/(4*dict_user['radius']))
+
+    # compute andrade
+    L_andrade = []
+    L_strain_log = []
+    L_t_log = []
+    mean_log_k = 0
+    if len(L_strain) > 1:
+        for i in range(1,len(L_strain)):
+            L_strain_log.append(math.log(abs(L_strain[i])))
+            L_t_log.append(math.log(L_t_PF[i-1]))
+            mean_log_k = mean_log_k + (L_strain_log[-1] - 1/3*L_t_log[-1])
+        mean_log_k = mean_log_k/len(L_strain) # mean k in Andrade creep law
+        # compute fitted Andrade creep law
+        for i in range(len(L_t_log)):
+            L_andrade.append(mean_log_k + 1/3*L_t_log[i])
+    # plot
+    if 'y_contactPoint' in dict_user['L_figures'] and dict_sample['i_DEMPF_ite'] > 10:
+        fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(16,9))
+        # displacement
+        ax1.plot(L_t_PF, dict_user['L_y_contactPoint'])
+        ax1.set_title('Y coordinate of the contact point (m)')
+        ax1.set_xlabel('PF Times (-)')
+        # strain
+        ax2.plot(L_t_PF, L_strain)
+        ax2.set_title(r'$\epsilon_y$ (-)')
+        ax2.set_xlabel('PF Times (-)')
+        # Andrade
+        ax3.plot(L_t_log, L_strain_log)
+        ax3.plot(L_t_log, L_andrade, color='k', linestyle='dotted')
+        ax3.set_title('Andrade creep law')
+        ax3.set_ylabel(r'log(|$\epsilon_y$|) (-)')
+        ax3.set_xlabel('log(Times) (-)')
+        # close
+        fig.tight_layout()
+        fig.savefig('plot/y_contact_point.png')
+        plt.close(fig)
+    # save
     dict_user['L_strain'] = L_strain
     dict_user['L_andrade'] = L_andrade
     dict_user['mean_log_k'] = mean_log_k
@@ -617,7 +791,7 @@ def compute_sphericities(L_vertices):
         CircleRatioSphericity = DiameterInscribing / DiameterCircumscribing
     else : 
         CircleRatioSphericity = 1
-
+    
     #Perimeter Sphericity
     PerimeterSameAreaParticle = 2*math.sqrt(SurfaceParticle*math.pi)
     PerimeterParticle = 0
