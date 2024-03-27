@@ -171,6 +171,7 @@ def run_yade(dict_user, dict_sample):
     tic_dem = time.perf_counter() # compute dem performances
     os.system('yadedaily -j '+str(dict_user['n_proc'])+' -x -n dem_base.py')
     #os.system('yadedaily -j '+str(dict_user['n_proc'])+' dem_base.py')
+    #os.system('~/AlexSM/myYade/install/bin/yade-2024-01-31.git-c315081 -j '+str(dict_user['n_proc'])+' dem_base.py')
     tac_dem = time.perf_counter() # compute dem performances
     dict_user['L_t_dem'].append(tac_dem-tic_dem)
     dict_user['solve_dem'] = dict_user['solve_dem'] + tac_dem-tic_dem 
