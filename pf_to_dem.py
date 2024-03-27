@@ -173,7 +173,7 @@ def read_vtk(dict_user, dict_sample, j_str):
 
     if not dict_sample['Map_known']:
         # plot processors distribution
-        if 'processor' in dict_user['L_figures']:
+        if 'processor' in dict_user['L_figures'] and not dict_user['remesh']:
             fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
             # parameters
             title_fontsize = 20
@@ -317,13 +317,14 @@ def interpolate_vertices(eta_i_map, center, dict_user, dict_sample):
     L_vertices = ()
     # interpolate plane (Least squares method)
     for i_phi in range(len(map_phi)):
-        # mean vertices
-        mean_v = np.array([0, 0])
-        for v_i in map_phi[i_phi]:
-            mean_v = mean_v + v_i/len(map_phi[i_phi])
-        # save
-        L_vertices = L_vertices + ((mean_v[0], mean_v[1], 0,),)
-        L_vertices = L_vertices + ((mean_v[0], mean_v[1], 1),)
+        if map_phi[i_phi] != []:
+            # mean vertices
+            mean_v = np.array([0, 0])
+            for v_i in map_phi[i_phi]:
+                mean_v = mean_v + v_i/len(map_phi[i_phi])
+            # save
+            L_vertices = L_vertices + ((mean_v[0], mean_v[1], 0,),)
+            L_vertices = L_vertices + ((mean_v[0], mean_v[1], 1),)
 
     return L_vertices
 

@@ -170,12 +170,12 @@ def save_mesh_database(dict_user, dict_sample):
     if not Path('mesh_map.database').exists():
         dict_data = {
         'n_proc': dict_user['n_proc'],
-        'x_min': dict_user['x_min'],
-        'x_max': dict_user['x_max'],
-        'y_min': dict_user['y_min'],
-        'y_max': dict_user['y_max'],
-        'n_mesh_x': dict_user['n_mesh_x'],
-        'n_mesh_y': dict_user['n_mesh_y'],
+        'x_min': min(dict_sample['x_L']),
+        'x_max': max(dict_sample['x_L']),
+        'y_min': min(dict_sample['y_L']),
+        'y_max': max(dict_sample['y_L']),
+        'n_mesh_x': len(dict_sample['x_L']),
+        'n_mesh_y': len(dict_sample['y_L']),
         'L_L_i_XYZ_used': dict_sample['L_L_i_XYZ_used'],
         'L_XYZ': dict_sample['L_XYZ']
         }
@@ -188,12 +188,12 @@ def save_mesh_database(dict_user, dict_sample):
             dict_database = pickle.load(handle)
         dict_data = {
         'n_proc': dict_user['n_proc'],
-        'x_min': dict_user['x_min'],
-        'x_max': dict_user['x_max'],
-        'y_min': dict_user['y_min'],
-        'y_max': dict_user['y_max'],
-        'n_mesh_x': dict_user['n_mesh_x'],
-        'n_mesh_y': dict_user['n_mesh_y'],
+        'x_min': min(dict_sample['x_L']),
+        'x_max': max(dict_sample['x_L']),
+        'y_min': min(dict_sample['y_L']),
+        'y_max': max(dict_sample['y_L']),
+        'n_mesh_x': len(dict_sample['x_L']),
+        'n_mesh_y': len(dict_sample['y_L']),
         'L_L_i_XYZ_used': dict_sample['L_L_i_XYZ_used'],
         'L_XYZ': dict_sample['L_XYZ']
         }   
@@ -219,22 +219,22 @@ def check_mesh_database(dict_user, dict_sample):
             dict_database = pickle.load(handle)
         dict_data = {
         'n_proc': dict_user['n_proc'],
-        'x_min': dict_user['x_min'],
-        'x_max': dict_user['x_max'],
-        'y_min': dict_user['y_min'],
-        'y_max': dict_user['y_max'],
-        'n_mesh_x': dict_user['n_mesh_x'],
-        'n_mesh_y': dict_user['n_mesh_y']
+        'x_min': min(dict_sample['x_L']),
+        'x_max': max(dict_sample['x_L']),
+        'y_min': min(dict_sample['y_L']),
+        'y_max': max(dict_sample['y_L']),
+        'n_mesh_x': len(dict_sample['x_L']),
+        'n_mesh_y': len(dict_sample['y_L'])
         }   
         mesh_map_known = False
         for i_run in range(1,len(dict_database.keys())+1):
             if dict_database['Run_'+str(int(i_run))]['n_proc'] == dict_user['n_proc'] and\
-            dict_database['Run_'+str(int(i_run))]['x_min'] == dict_user['x_min'] and\
-            dict_database['Run_'+str(int(i_run))]['x_max'] == dict_user['x_max'] and\
-            dict_database['Run_'+str(int(i_run))]['y_min'] == dict_user['y_min'] and\
-            dict_database['Run_'+str(int(i_run))]['y_max'] == dict_user['y_max'] and\
-            dict_database['Run_'+str(int(i_run))]['n_mesh_x'] == dict_user['n_mesh_x'] and\
-            dict_database['Run_'+str(int(i_run))]['n_mesh_y'] == dict_user['n_mesh_y'] :
+            dict_database['Run_'+str(int(i_run))]['x_min'] == min(dict_sample['x_L']) and\
+            dict_database['Run_'+str(int(i_run))]['x_max'] == max(dict_sample['x_L']) and\
+            dict_database['Run_'+str(int(i_run))]['y_min'] == min(dict_sample['y_L']) and\
+            dict_database['Run_'+str(int(i_run))]['y_max'] == max(dict_sample['y_L']) and\
+            dict_database['Run_'+str(int(i_run))]['n_mesh_x'] == len(dict_sample['x_L']) and\
+            dict_database['Run_'+str(int(i_run))]['n_mesh_y'] == len(dict_sample['y_L']) :
                 mesh_map_known = True
                 i_known = i_run
         if mesh_map_known :
@@ -903,3 +903,126 @@ def perpendicularBisectorFromLine(P, Q, a, b, c):
     a = -b
     b = temp
     return a, b, c
+
+#------------------------------------------------------------------------------------------------------------------------------------------ #
+
+def remesh(dict_user, dict_sample):
+    '''
+    Remesh the problem.
+    
+    Eta1, Eta2, c maps are updated
+    x_L, n_mesh_x, y_L, n_mesh_y are updated.
+    '''
+    # search the grain boundaries
+    y_min = dict_sample['y_L'][-1]
+    y_max = dict_sample['y_L'][0]
+    x_min = dict_sample['x_L'][-1]
+    x_max = dict_sample['x_L'][0]
+    # iterate on y
+    for i_y in range(len(dict_sample['y_L'])):
+        if max(dict_sample['eta_1_map'][-1-i_y, :]) > 0.5 or\
+           max(dict_sample['eta_2_map'][-1-i_y, :]) > 0.5:
+            if dict_sample['y_L'][i_y] < y_min : 
+                y_min = dict_sample['y_L'][i_y]
+            if dict_sample['y_L'][i_y] > y_max :
+                y_max = dict_sample['y_L'][i_y]
+    # iterate on x
+    for i_x in range(len(dict_sample['x_L'])):
+        if max(dict_sample['eta_1_map'][:, i_x]) > 0.5 or\
+           max(dict_sample['eta_2_map'][:, i_x]) > 0.5:
+            if dict_sample['x_L'][i_x] < x_min : 
+                x_min = dict_sample['x_L'][i_x]
+            if dict_sample['x_L'][i_x] > x_max :
+                x_max = dict_sample['x_L'][i_x]
+    # compute the domain boundaries (grain boundaries + margins)
+    x_min_dom = x_min - dict_user['margin_mesh_domain']
+    x_max_dom = x_max + dict_user['margin_mesh_domain']
+    y_min_dom = y_min - dict_user['margin_mesh_domain']
+    y_max_dom = y_max + dict_user['margin_mesh_domain']
+    # compute the new x_L and y_L
+    x_L = np.arange(x_min_dom, x_max_dom, dict_user['size_x_mesh'])
+    n_mesh_x = len(x_L)
+    y_L = np.arange(y_min_dom, y_max_dom, dict_user['size_y_mesh'])
+    n_mesh_y = len(y_L)
+    delta_x_max = 0
+    delta_y_max = 0
+    # compute the new maps
+    eta_1_map = np.zeros((n_mesh_y, n_mesh_x))
+    eta_2_map = np.zeros((n_mesh_y, n_mesh_x))
+    c_map = np.ones((n_mesh_y, n_mesh_x))
+    # iterate on lines
+    for i_y in range(len(y_L)):
+        # addition
+        if y_L[i_y] < dict_sample['y_L'][0] or \
+           dict_sample['y_L'][-1] < y_L[i_y]:
+            # iterate on columns
+            for i_x in range(len(x_L)):
+                eta_1_map[-1-i_y, i_x] = 0
+                eta_2_map[-1-i_y, i_x] = 0
+                c_map[-1-i_y, i_x] = 1
+        # extraction
+        else :     
+            # iterate on columns
+            for i_x in range(len(x_L)):
+                # addition
+                if x_L[i_x] < dict_sample['x_L'][0] or \
+                   dict_sample['x_L'][-1] < x_L[i_x]: 
+                    eta_1_map[-1-i_y, i_x] = 0
+                    eta_2_map[-1-i_y, i_x] = 0
+                    c_map[-1-i_y, i_x] = 1
+                # extraction
+                else :
+                    # find nearest node to old node
+                    L_search = list(abs(np.array(dict_sample['x_L']-x_L[i_x])))
+                    i_x_old = L_search.index(min(L_search))
+                    delta_x = min(L_search)
+                    L_search = list(abs(np.array(dict_sample['y_L']-y_L[i_y])))
+                    i_y_old = L_search.index(min(L_search))
+                    delta_y = min(L_search)
+                    # track
+                    if delta_x > delta_x_max:
+                        delta_x_max = delta_x
+                    if delta_y > delta_y_max:
+                        delta_y_max = delta_y
+                    # update
+                    eta_1_map[-1-i_y, i_x] = dict_sample['eta_1_map'][-1-i_y_old, i_x_old]  
+                    eta_2_map[-1-i_y, i_x] = dict_sample['eta_2_map'][-1-i_y_old, i_x_old]  
+                    c_map[-1-i_y, i_x] = dict_sample['c_map'][-1-i_y_old, i_x_old]  
+    # tracking
+    dict_user['L_x_min_dom'].append(min(x_L))
+    dict_user['L_x_max_dom'].append(max(x_L))
+    dict_user['L_y_min_dom'].append(min(y_L))
+    dict_user['L_y_max_dom'].append(max(y_L))
+    dict_user['L_delta_x_max'].append(delta_x_max)
+    dict_user['L_delta_y_max'].append(delta_y_max)
+    # plot 
+    if 'dim_dom' in dict_user['L_figures']:
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_x_min_dom'], label='x_min')
+        ax1.plot(dict_user['L_x_max_dom'], label='x_max')
+        ax1.plot(dict_user['L_y_min_dom'], label='y_min')
+        ax1.plot(dict_user['L_y_max_dom'], label='y_max')
+        ax1.legend(fontsize=20)
+        ax1.set_title(r'Domain Dimensions',fontsize = 30)
+        fig.tight_layout()
+        fig.savefig('plot/dim_dom.png')
+        plt.close(fig)
+
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(dict_user['L_delta_x_max'], label=r'max $\Delta$x')
+        ax1.plot(dict_user['L_delta_y_max'], label=r'max $\Delta$y')
+        ax1.legend(fontsize=20)
+        ax1.set_title(r'Interpolation errors',fontsize = 30)
+        fig.tight_layout()
+        fig.savefig('plot/dim_dom_delta.png')
+        plt.close(fig)
+    # save 
+    dict_sample['x_L'] = x_L
+    dict_user['n_mesh_x'] = n_mesh_x
+    dict_sample['y_L'] = y_L
+    dict_user['n_mesh_y'] = n_mesh_y
+    dict_sample['eta_1_map'] = eta_1_map
+    dict_sample['eta_2_map'] = eta_2_map
+    dict_sample['c_map'] = c_map
+
+                

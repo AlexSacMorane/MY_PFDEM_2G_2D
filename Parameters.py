@@ -16,22 +16,21 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 175 # number of PFDEM iterations
-    n_proc = 6 # number of processors used
+    n_DEMPF_ite = 50 # number of PFDEM iterations
+    n_proc = 5 # number of processors used
     j_total = 0 # index global of results
     save_simulation = False # indicate if the simulation is saved
-    n_max_vtk_files = 20 # maximum number of vtk files (can be None to save all files)
+    n_max_vtk_files = 10 # maximum number of vtk files (can be None to save all files)
 
     # Select Figures to plot
     # Available:
     # contact_pressure, contact_distrib_m_ed, contact_point_ed, contact_volume, contact_nb_node
     # contact_detection, contact_h_s_v, contact_dem
-    # m_ed, dt_PF, IC, processor, sphericities, force_applied, maps, n_grain_kc_map
+    # m_ed, dt_PF, IC, processor, sphericities, force_applied, maps, n_grain_kc_map, dim_dom
     # shape_evolution, n_vertices, sum_etai_c, mean_etai_c, mass_loss, performances
     # disp_strain_andrade, sample_height, y_contactPoint
-    L_figures = ['maps', 'shape_evolution', 'mean_etai_c', 'n_grain_kc_map', 'mass_loss', \
-                 'contact_volume', 'contact_h_s_v', 'contact_pressure', 'contact_distrib_m_ed', 'contact_point_ed',\
-                 'disp_strain_andrade', 'sample_height', 'y_contactPoint']
+    L_figures = ['maps', 'shape_evolution', 'dt_PF', 'IC', 'dim_dom', 'contact_volume',\
+                 'contact_h_s_v', 'contact_distrib_m_ed', 'contact_point_ed', 'disp_strain_andrade']
 
     # Figure (plot all or current)
     # The maps configuration
@@ -78,14 +77,25 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # Phase-Field (Moose)
 
+    # determine if remeshing is available
+    remesh = True
     # mesh
-    x_min = -1.3*radius
-    x_max =  1.3*radius
-    n_mesh_x = 100
-    y_min = -2.3*radius
-    y_max =  2.3*radius
-    n_mesh_y = 200
-    m_size_mesh = ((x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1))/2
+    check_database = True
+    # remesh
+    if remesh:
+        size_x_mesh = 0.02
+        size_y_mesh = size_x_mesh
+        m_size_mesh = (size_x_mesh+size_y_mesh)/2
+        margin_mesh_domain = 10*size_x_mesh
+    # constant mesh
+    else :
+        x_min = -1.3*radius
+        x_max =  1.3*radius
+        y_min = -2.3*radius
+        y_max =  2.3*radius
+        n_mesh_x = 100
+        n_mesh_y = 200
+        m_size_mesh = ((x_max-x_min)/(n_mesh_x-1)+(y_max-y_min)/(n_mesh_y-1))/2
 
     # PF material parameters
     # the energy barrier
@@ -97,8 +107,7 @@ def get_parameters():
     # the gradient coefficient
     kappa_eta = Energy_barrier*w*w/9.86
     # the mobility
-    Mobility = 3/2.2*w
-    Mobility_eff = 2.2/3*Mobility/w
+    Mobility_eff = 1
 
     # kinetics of dissolution and precipitation
     # it affects the tilting coefficient in Ed
@@ -116,7 +125,7 @@ def get_parameters():
     # Aitken method
     # the time stepping and duration of one PF simualtion
     # level 0
-    dt_PF_0 = 0.1 # time step
+    dt_PF_0 = 0.2 # time step
     # level 1
     dt_PF_1 = dt_PF_0/2
     m_ed_contact_1 = 0.1
@@ -193,6 +202,13 @@ def get_parameters():
     L_loss_pf_eta2 = []
     L_loss_pf_c = []
     L_loss_pf_m = []
+    if remesh:
+        L_x_min_dom = []
+        L_x_max_dom = []
+        L_y_min_dom = []
+        L_y_max_dom = []
+        L_delta_x_max = []
+        L_delta_y_max = []
 
     #---------------------------------------------------------------------#
     # dictionnary
@@ -217,14 +233,8 @@ def get_parameters():
     'print_all_shape_evolution': print_all_shape_evolution,
     'Shape': Shape,
     'radius': radius,
+    'remesh': remesh,
     'n_phi': n_phi,
-    'x_min': x_min,
-    'x_max': x_max,
-    'n_mesh_x': n_mesh_x,
-    'y_min': y_min,
-    'y_max': y_max,
-    'n_mesh_y': n_mesh_y,
-    'Mobility': Mobility,
     'Mobility_eff': Mobility_eff,
     'kappa_eta': kappa_eta,
     'n_int': n_int,
@@ -299,7 +309,27 @@ def get_parameters():
     'L_loss_pf_eta1': L_loss_pf_eta1,
     'L_loss_pf_eta2': L_loss_pf_eta2,
     'L_loss_pf_c': L_loss_pf_c,
-    'L_loss_pf_m': L_loss_pf_m
+    'L_loss_pf_m': L_loss_pf_m,
+    'check_database': check_database
     }
+
+    # specific inputs
+    if remesh:
+        dict_user['size_x_mesh'] = size_x_mesh
+        dict_user['size_y_mesh'] = size_y_mesh
+        dict_user['margin_mesh_domain'] = margin_mesh_domain
+        dict_user['L_x_min_dom'] = L_x_min_dom
+        dict_user['L_x_max_dom'] = L_x_max_dom
+        dict_user['L_y_min_dom'] = L_y_min_dom
+        dict_user['L_y_max_dom'] = L_y_max_dom
+        dict_user['L_delta_x_max'] = L_delta_x_max
+        dict_user['L_delta_y_max'] = L_delta_y_max
+    else :
+        dict_user['x_min'] = x_min
+        dict_user['x_max'] = x_max
+        dict_user['y_min'] = y_min
+        dict_user['y_max'] = y_max
+        dict_user['n_mesh_x'] = n_mesh_x
+        dict_user['n_mesh_y'] = n_mesh_y
 
     return dict_user

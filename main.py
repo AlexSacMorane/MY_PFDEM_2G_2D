@@ -35,6 +35,11 @@ def run_moose(dict_user, dict_sample):
     tac_tempo = time.perf_counter() # compute performances
     dict_user['comp_con_vol'] = dict_user['comp_con_vol'] + tac_tempo-tic_tempo 
 
+    # remesh
+    if dict_user['remesh']:
+        remesh(dict_user, dict_sample) # from tools.py
+        # write pf file
+        write_eta_txt(dict_user, dict_sample) # from dem_to_pf.py
 
     # Control and adapt the force applied in DEM
     # YADE assumes only convex shapes. If particle is concave, it creates false volume
@@ -105,6 +110,12 @@ def run_moose(dict_user, dict_sample):
     dict_user['sort_pf'] = dict_user['sort_pf'] + tac_tempo-tic_tempo 
     
     print('Reading data')
+    if dict_user['remesh']:
+        # check if the mesh map is inside the database
+        if dict_user['check_database']:
+            check_mesh_database(dict_user, dict_sample) # from tools.py
+        else :
+            dict_sample['Map_known'] = False
     tic_pf_to_dem = time.perf_counter() # compute pf_to_dem performances
     read_vtk(dict_user, dict_sample, last_j_str) # in pf_to_dem.py
     tac_pf_to_dem = time.perf_counter() # compute pf_to_dem performances
@@ -112,7 +123,9 @@ def run_moose(dict_user, dict_sample):
     dict_user['read_pf'] = dict_user['read_pf'] + tac_pf_to_dem-tic_pf_to_dem 
     # check mass
     compute_mass_loss(dict_user, dict_sample, 'L_loss_pf') # from tools.py
-    
+    if dict_user['remesh'] and dict_user['check_database']:
+        # save mesh database 
+        save_mesh_database(dict_user, dict_sample) # from tools.py
 
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 
@@ -217,7 +230,8 @@ if dict_user['save_simulation']:
         raise ValueError('Simulation folder exists: please change parameters')
 
 # check if the mesh map is inside the database
-check_mesh_database(dict_user, dict_sample) # from tools.py
+if not dict_user['remesh']:
+    check_mesh_database(dict_user, dict_sample) # from tools.py
 
 # compute performances
 tic = time.perf_counter()
@@ -290,7 +304,6 @@ dict_user['plot_perf'] = 0
 dict_user['plot_d_s_a'] = 0
 dict_user['plot_map'] = 0
 
-
 # ------------------------------------------------------------------------------------------------------------------------------------------ #
 # PFDEM iteration
 
@@ -349,7 +362,8 @@ print("\nSimulation time : "+str(hours)+" hours "+str(minutes)+" minutes "+str(s
 print('Simulation ends')
 
 # save mesh database 
-save_mesh_database(dict_user, dict_sample) # from tools.py
+if not dict_user['remesh']:
+    save_mesh_database(dict_user, dict_sample) # from tools.py
 
 # sort files
 reduce_n_vtk_files(dict_user, dict_sample) # from tools.py

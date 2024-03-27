@@ -9,20 +9,39 @@ def create_2_spheres(dict_user, dict_sample):
     '''
     Create initial conditions with 2 spheres.
     Mesh and phase field maps are generated
-    '''
+    '''    
+    # ------------------------------------------------------------------------------------------------------------------------------------------ #
+    # position of the grains
+
+    pos_1 = [0,-dict_user['radius']]
+    pos_2 = [0, dict_user['radius']]
+
+    # ------------------------------------------------------------------------------------------------------------------------------------------ #
     # Create initial mesh
     print("Creating initial mesh")
 
-    x_L = np.linspace(dict_user['x_min'], dict_user['x_max'], dict_user['n_mesh_x'])
-    y_L = np.linspace(dict_user['y_min'], dict_user['y_max'], dict_user['n_mesh_y'])
+    if dict_user['remesh']:
+        # x min
+        x_min_dom = 0-dict_user['radius']-dict_user['margin_mesh_domain']
+        # x max     
+        x_max_dom = 0+dict_user['radius']+dict_user['margin_mesh_domain']
+        # y min
+        y_min_dom = -dict_user['radius']-dict_user['radius']-dict_user['margin_mesh_domain']
+        # y max
+        y_max_dom = dict_user['radius']+dict_user['radius']+dict_user['margin_mesh_domain']
+        # compute the new x_L and y_L
+        x_L = np.arange(x_min_dom, x_max_dom, dict_user['size_x_mesh'])
+        dict_user['n_mesh_x'] = len(x_L)
+        y_L = np.arange(y_min_dom, y_max_dom, dict_user['size_y_mesh'])
+        dict_user['n_mesh_y'] = len(y_L)
+    else :
+        x_L = np.linspace(dict_user['x_min'], dict_user['x_max'], dict_user['n_mesh_x'])
+        y_L = np.linspace(dict_user['y_min'], dict_user['y_max'], dict_user['n_mesh_y'])
 
     # ------------------------------------------------------------------------------------------------------------------------------------------ #
     # Create initial phase map
 
     print("Creating initial phase field maps")
-
-    pos_1 = [0,-dict_user['radius']]
-    pos_2 = [0, dict_user['radius']]
 
     eta_1_map = np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x']))
     eta_2_map = np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x']))

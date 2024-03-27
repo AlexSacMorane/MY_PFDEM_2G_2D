@@ -72,7 +72,8 @@ def move_phasefield(dict_user, dict_sample):
     dict_sample['eta_2_map'] = eta_2_map_new
 
     # write txts for phase field
-    write_eta_txt(dict_user, dict_sample) # phase field
+    if not dict_user['remesh']:
+        write_eta_txt(dict_user, dict_sample) # phase field
 
 # -----------------------------------------------------------------------------#
 
